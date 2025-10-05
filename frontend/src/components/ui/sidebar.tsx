@@ -49,10 +49,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       roles: ['admin', 'user', 'moderator'] // Todos los roles
     },
     {
-      id: 'monitoring',
+      id: 'empresas',
       label: 'Empresas',
       icon: <Building2 className="h-5 w-5" />,
-      href: '/monitoring',
+      href: '/empresas',
       roles: ['admin', 'user', 'moderator']
     },
     // {

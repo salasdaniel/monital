@@ -42,10 +42,13 @@ const Dashboard: React.FC = () => {
     // Manejar navegación de menús
     console.log('Menu clicked:', menuId);
     
-    // Por ahora solo manejamos algunos menús básicos
+    // Navegación a diferentes secciones
     switch (menuId) {
       case 'dashboard':
         navigate('/dashboard');
+        break;
+      case 'empresas':
+        navigate('/empresas');
         break;
       case 'profile':
         console.log('Navegando a perfil...');

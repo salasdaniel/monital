@@ -2,12 +2,10 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.conf import settings
 from ..models import User
 import hashlib, jwt, datetime, json
-from decouple import config
 from .views import validate_app_key
-
-SECRET_KEY = config("SECRET_KEY", default="unsafe-secret")
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -42,7 +40,7 @@ class LoginView(View):
             'iat': datetime.datetime.utcnow()
         }
 
-        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
 
         return JsonResponse({
             'access_token': token,
@@ -59,7 +57,7 @@ class ProfileView(View):
 
         token = auth.split(' ')[1]
         try:
-            decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
         except jwt.ExpiredSignatureError:
             return JsonResponse({'error': 'Token expirado'}, status=401)
         except jwt.InvalidTokenError:
