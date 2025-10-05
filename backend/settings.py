@@ -6,7 +6,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Seguridad
-SECRET_KEY = config("SECRET_KEY", default="unsafe-secret")
+SECRET_KEY = config("REACT_APP_SECRET_KEY", default="unsafe-secret")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = ["*"]
 
@@ -58,9 +58,27 @@ DATABASES = {
 # Configuración CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://monital.noko.com.py"
 ]
 # (Durante desarrollo también podrías usar)
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_HEADERS = [
+    'x-app-key',  # Agregar nuestro header personalizado
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding', 
+    'authorization',
+    'content-type',  # Este es crucial
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-app-key',  # Tu header personalizado
+]
 
 # Configuración REST Framework
 REST_FRAMEWORK = {
