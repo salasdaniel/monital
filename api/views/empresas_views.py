@@ -73,3 +73,45 @@ class EmpresaAddView(View):
 
         except Exception as e:
             return JsonResponse({'error': f'Error al crear la empresa: {str(e)}'}, status=500)
+
+class EmpresaListView(View):
+    def get(self, request):
+        # Validar app_key por seguridad
+        invalid = validate_app_key(request)
+        if invalid:
+            return invalid
+
+        # Validar JWT del usuario autenticado
+        user, error_response = validate_jwt(request)
+        if error_response:
+            return error_response
+
+        try:
+            # Obtener todas las empresas
+            empresas = Empresa.objects.all().order_by('-created_at')
+            
+            # Serializar los datos
+            empresas_data = []
+            for empresa in empresas:
+                empresas_data.append({
+                    'id': empresa.id,
+                    'razon_social': empresa.razon_social,
+                    'nombre_comercial': empresa.nombre_comercial,
+                    'ruc': empresa.ruc,
+                    'direccion': empresa.direccion,
+                    'correo_referencia': empresa.correo_referencia,
+                    'numero_referencia': empresa.numero_referencia,
+                    'activo': empresa.activo,
+                    'created_at': empresa.created_at.isoformat(),
+                    'updated_at': empresa.updated_at.isoformat(),
+                    'usuario_creacion': empresa.usuario_creacion.username if empresa.usuario_creacion else None
+                })
+
+            return JsonResponse({
+                'message': 'Empresas obtenidas exitosamente',
+                'count': len(empresas_data),
+                'empresas': empresas_data
+            }, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': f'Error al obtener las empresas: {str(e)}'}, status=500)

@@ -1,66 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import Sidebar from '../components/ui/sidebar';
-import { LogOut, User } from 'lucide-react';
+import Header from '../components/ui/header';
+import { User } from 'lucide-react';
+import { getUser } from "../utils/auth";
+
 
 interface UserData {
   username: string;
-  role?: string;
+  role: string | 'user';
 }
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
     // Obtener datos del usuario desde localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        console.log('User from localStorage:', parsedUser);
-      } catch (error) {
-        console.error('Error al parsear datos del usuario:', error);
-      }
-    }
+    const userData = getUser();
+    setUser(userData);
+    
   }, []);
-
-  const handleLogout = () => {
-    // Limpiar localStorage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    
-    // Redireccionar al login
-    navigate('/');
-  };
-
-  const handleMenuClick = (menuId: string) => {
-    // Manejar navegación de menús
-    console.log('Menu clicked:', menuId);
-    
-    // Navegación a diferentes secciones
-    switch (menuId) {
-      case 'dashboard':
-        navigate('/dashboard');
-        break;
-      case 'empresas':
-        navigate('/empresas');
-        break;
-      case 'profile':
-        console.log('Navegando a perfil...');
-        break;
-      case 'settings':
-        console.log('Navegando a configuración...');
-        break;
-      default:
-        console.log(`Funcionalidad ${menuId} en desarrollo`);
-    }
-  };
-
+  
   const getWelcomeMessage = (): string => {
     const currentHour = new Date().getHours();
     
@@ -73,57 +36,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getUserDisplayName = (): string => {
-    return user?.username || 'Usuario';
-  };
-
-  const getUserRole = (): string => {
-    return user?.role || 'user';
-  };
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <Sidebar 
-        userRole={getUserRole()}
+        userRole={user?.role ?? 'user'}
         currentPath={location.pathname}
-        onMenuClick={handleMenuClick}
+        // onMenuClick={handleMenuClick}
       />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="px-6 py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-sm text-gray-500">Panel de Control Principal</p>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
-                    {getUserDisplayName()}
-                  </span>
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full capitalize">
-                    {getUserRole()}
-                  </span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header 
+          title="Dashboard" 
+          subtitle="Panel de Control Principal" 
+        />
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
@@ -140,7 +70,7 @@ const Dashboard: React.FC = () => {
                   {getWelcomeMessage()}
                 </CardTitle>
                 <CardDescription className="text-lg mt-2">
-                  Bienvenido/a de vuelta, <span className="font-semibold text-gray-700">{getUserDisplayName()}</span>
+                  Bienvenido/a de vuelta, <span className="font-semibold text-gray-700">{user?.username}</span>
                 </CardDescription>
               </CardHeader>
               
@@ -183,7 +113,7 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              {(getUserRole() === 'admin' || getUserRole() === 'moderator') && (
+              {(user?.role === 'admin' || user?.role === 'moderator') && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Usuarios Conectados</CardTitle>

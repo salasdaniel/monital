@@ -1,27 +1,20 @@
 import React, { useState } from 'react';
 import { Button } from './button';
 import { cn } from '../../lib/utils';
+import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Building2,
-  Users, 
-  Settings, 
-  BarChart3, 
-  FileText, 
-  Database,
-  Shield,
   ChevronLeft,
   ChevronRight,
-  User,
   Monitor,
-  AlertTriangle
 } from 'lucide-react';
 
 interface MenuItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  href?: string;
+  href: string;
   onClick?: () => void;
   roles: string[]; // Roles que pueden ver este menú
 }
@@ -38,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onMenuClick 
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate()
 
   // Definir menús basados en roles
   const menuItems: MenuItem[] = [
@@ -55,62 +49,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/empresas',
       roles: ['admin', 'user', 'moderator']
     },
-    // {
-    //   id: 'analytics',
-    //   label: 'Análisis',
-    //   icon: <BarChart3 className="h-5 w-5" />,
-    //   href: '/analytics',
-    //   roles: ['admin', 'moderator'] // Solo admin y moderador
-    // },
-    // {
-    //   id: 'alerts',
-    //   label: 'Alertas',
-    //   icon: <AlertTriangle className="h-5 w-5" />,
-    //   href: '/alerts',
-    //   roles: ['admin', 'user', 'moderator']
-    // },
-    // {
-    //   id: 'reports',
-    //   label: 'Reportes',
-    //   icon: <FileText className="h-5 w-5" />,
-    //   href: '/reports',
-    //   roles: ['admin', 'moderator']
-    // },
-    // {
-    //   id: 'users',
-    //   label: 'Usuarios',
-    //   icon: <Users className="h-5 w-5" />,
-    //   href: '/users',
-    //   roles: ['admin'] // Solo admin
-    // },
-    // {
-    //   id: 'database',
-    //   label: 'Base de Datos',
-    //   icon: <Database className="h-5 w-5" />,
-    //   href: '/database',
-    //   roles: ['admin']
-    // },
-    // {
-    //   id: 'security',
-    //   label: 'Seguridad',
-    //   icon: <Shield className="h-5 w-5" />,
-    //   href: '/security',
-    //   roles: ['admin']
-    // },
-    // {
-    //   id: 'profile',
-    //   label: 'Perfil',
-    //   icon: <User className="h-5 w-5" />,
-    //   href: '/profile',
-    //   roles: ['admin', 'user', 'moderator']
-    // },
-    // {
-    //   id: 'settings',
-    //   label: 'Configuración',
-    //   icon: <Settings className="h-5 w-5" />,
-    //   href: '/settings',
-    //   roles: ['admin', 'moderator']
-    // }
   ];
 
   // Filtrar menús según el rol del usuario
@@ -119,11 +57,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 
   const handleMenuClick = (item: MenuItem) => {
-    if (item.onClick) {
-      item.onClick();
-    } else if (onMenuClick) {
-      onMenuClick(item.id);
-    }
+    // window.location.href =(item.href || '/dashboard');
+    navigate(item.href);
   };
 
   const toggleSidebar = () => {
@@ -145,7 +80,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Monital</h2>
-                <p className="text-xs text-gray-500 capitalize">{userRole}</p>
               </div>
             </div>
           )}
