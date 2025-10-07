@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Search, Plus, Edit2, Trash2, Building2, Phone, Mail, MapPin, AlertCircle, X } from "lucide-react";
+import { Plus, Building2, AlertCircle, X } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 // Interfaces basadas en la API
@@ -176,25 +177,6 @@ const Empresas: React.FC = () => {
     }
   };
 
-  const handleEdit = (empresa: Empresa) => {
-    setEditingEmpresa(empresa);
-    setFormData({
-      razon_social: empresa.razon_social,
-      nombre_comercial: empresa.nombre_comercial,
-      ruc: empresa.ruc,
-      direccion: empresa.direccion,
-      correo_referencia: empresa.correo_referencia || '',
-      numero_referencia: empresa.numero_referencia || '',
-      activo: empresa.activo,
-    });
-    setIsCreateModalOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    // TODO: Implementar eliminación
-    console.log('Eliminando empresa con ID:', id);
-  };
-
   const resetForm = () => {
     setFormData({
       razon_social: '',
@@ -262,179 +244,247 @@ const Empresas: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
-          <div className="space-y-6">
-            {/* Botón para nueva empresa */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Lista de Empresas</h2>
-                <p className="text-gray-600">
-                  Gestiona todas las empresas registradas en el sistema
-                </p>
-              </div>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Empresa
-              </Button>
+          <div className="flex flex-col gap-6">
+            {/* Tarjetas de métricas - Exactamente como en la imagen */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Empresas</CardTitle>
+                  <Building2 className="h-4 w-4 text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {empresas.length}
+                  </div>
+                  <p className="text-xs text-gray-500">Total registradas</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Empresas Activas</CardTitle>
+                  <Building2 className="h-4 w-4 text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-500">
+                    {empresas.filter(e => e.activo).length}
+                  </div>
+                  <p className="text-xs text-gray-500">Empresas activas</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Empresas Inactivas</CardTitle>
+                  <Building2 className="h-4 w-4 text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {empresas.filter(e => !e.activo).length}
+                  </div>
+                  <p className="text-xs text-gray-500">Empresas inactivas</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Nuevas este Mes</CardTitle>
+                  <Building2 className="h-4 w-4 text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-500">
+                    {empresas.filter(e => {
+                      const createdDate = new Date(e.created_at);
+                      const currentDate = new Date();
+                      return createdDate.getMonth() === currentDate.getMonth() && 
+                             createdDate.getFullYear() === currentDate.getFullYear();
+                    }).length}
+                  </div>
+                  <p className="text-xs text-gray-500">Empresas nuevas</p>
+                </CardContent>
+              </Card>
             </div>
 
-      {/* Barra de búsqueda y estadísticas */}
-      <div className="flex items-center justify-between">
-        <div className="relative w-96">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Buscar por razón social, nombre comercial o RUC..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-4">
-          <Card className="w-48">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">Total Empresas</p>
-                  <p className="text-2xl font-bold">{empresas.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="w-48">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">Activas</p>
-                  <p className="text-2xl font-bold">
-                    {empresas.filter(e => e.activo).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Filtros y tabla - Exactamente como en la imagen */}
+      <Card className="border border-gray-200 ">
 
-     
+       
+        {/* Filtros en fila horizontal */}
+        <div className="p-4  m-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex flex-col">
+              <Label className="text-sm font-medium text-gray-700 mb-1">Buscar</Label>
+              <Input
+                placeholder="Razón social, RUC..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                variant="minimal"
+                fieldSize="sm"
+                className="w-[200px]"
+              />
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-sm font-medium text-gray-700 mb-1">Estado</Label>
+              <Select defaultValue="todos">
+                <SelectTrigger variant="minimal" size="sm" className="w-[120px]">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-sm font-medium text-gray-700 mb-1">Ordenar por</Label>
+              <Select defaultValue="fecha">
+                <SelectTrigger variant="minimal" size="sm" className="w-[150px]">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fecha">Fecha Creación</SelectItem>
+                  <SelectItem value="nombre">Nombre</SelectItem>
+                  <SelectItem value="ruc">RUC</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="minimal"
+              size="sm"
+              className="px-3"
+            >
+              Descendente
+            </Button>
+            <div className="flex flex-col">
+              <Label className="text-sm font-medium text-gray-700 mb-1">Items por página</Label>
+              <Select defaultValue="10">
+                <SelectTrigger variant="minimal" size="sm" className="w-[80px]">
+                  <SelectValue placeholder="Items" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="minimal"
+              size="sm"
+              className="px-3"
+            >
+              Limpiar filtros
+            </Button>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              variant="minimal"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Empresa
+            </Button>
+          </div>
+        </div>
 
-      {/* Tabla de empresas */}
-      <Card>
-      
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+         
+
+        <CardContent className="p-0">
+          <div className="overflow-x-auto mx-4">
+            <table className="w-full text-sm ">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-gray-900">Empresa</th>
-                  <th className="text-left p-4 font-medium text-gray-900">RUC</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Dirección</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Contacto</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Estado</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Fecha Creación</th>
-                  <th className="text-right p-4 font-medium text-gray-900">Acciones</th>
+                <tr className="border-b border-gray-200">
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">ID</th>
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Razon Social</th>
+                  {/* <th className="text-center px-3 py-1 text-gray-700 font-medium">Nombre comercial</th> */}
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Ruc</th>
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Direccion</th>
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario Creacion</th>
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha Creacion </th>
+                  <th className="text-center px-3 py-1 text-gray-700 font-medium">Activo</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEmpresas.map((empresa) => (
-                  <tr key={empresa.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4">
-                      <div>
-                        <div className="font-medium">{empresa.nombre_comercial}</div>
-                        <div className="text-sm text-gray-500">{empresa.razon_social}</div>
-                      </div>
+                {filteredEmpresas.slice(0, 10).map((empresa) => (
+                  <tr key={empresa.id} className="">
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.id}
                     </td>
-                    <td className="p-4 font-mono text-sm">{empresa.ruc}</td>
-                    <td className="p-4 max-w-xs">
-                      <div className="flex items-start">
-                        <MapPin className="w-3 h-3 mr-1 mt-1 flex-shrink-0 text-gray-400" />
-                        <span className="truncate text-sm">{empresa.direccion}</span>
-                      </div>
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.razon_social}
                     </td>
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        {empresa.correo_referencia && (
-                          <div className="flex items-center text-sm">
-                            <Mail className="w-3 h-3 mr-1 text-gray-400" />
-                            <span className="truncate">{empresa.correo_referencia}</span>
-                          </div>
-                        )}
-                        {empresa.numero_referencia && (
-                          <div className="flex items-center text-sm">
-                            <Phone className="w-3 h-3 mr-1 text-gray-400" />
-                            {empresa.numero_referencia}
-                          </div>
-                        )}
-                        {!empresa.correo_referencia && !empresa.numero_referencia && (
-                          <span className="text-sm text-gray-400">Sin contacto</span>
-                        )}
-                      </div>
+                    {/* <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.nombre_comercial}
+                    </td> */}
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.ruc}
                     </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        empresa.activo 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {empresa.activo ? "Activo" : "Inactivo"}
-                      </span>
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.direccion}
                     </td>
-                    <td className="p-4">
-                      <div className="text-sm">
-                        {new Date(empresa.created_at).toLocaleDateString('es-ES')}
-                      </div>
-                      {empresa.usuario_creacion && (
-                        <div className="text-xs text-gray-500">
-                          por {empresa.usuario_creacion}
-                        </div>
-                      )}
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.usuario_creacion}
                     </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(empresa)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(empresa.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {new Date(empresa.created_at).toLocaleDateString('es-ES')}
+                    </td>
+                    <td className="px-3 py-1 text-center text-gray-700">
+                      {empresa.activo ? 'SI' : 'NO'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            
-            {filteredEmpresas.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'No se encontraron empresas' : 'No hay empresas registradas'}
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  {searchTerm 
-                    ? 'No hay empresas que coincidan con tu búsqueda.'
-                    : 'Comienza agregando tu primera empresa al sistema.'
-                  }
-                </p>
-                {!searchTerm && (
-                  <Button onClick={() => setIsCreateModalOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar Primera Empresa
-                  </Button>
-                )}
-              </div>
-            )}
+    
           </div>
+
+          {filteredEmpresas.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? 'No se encontraron empresas' : 'No hay empresas registradas'}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm 
+                  ? 'No hay empresas que coincidan con tu búsqueda.'
+                  : 'Comienza agregando tu primera empresa al sistema.'
+                }
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Primera Empresa
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
+
+        {/* Paginación - Exactamente como en la imagen */}
+        <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 mb-4">
+          <Button
+            variant="minimal"
+            size="sm"
+            className="px-3 text-gray-700"
+            disabled={true}
+          >
+            Anterior
+          </Button>
+
+          <span className="text-sm text-gray-500">
+            Página 1 de 1 - {filteredEmpresas.length} registros
+         
+          </span>
+
+          <Button
+            variant="minimal"
+            size="sm"
+            className="px-3 text-gray-700"
+            disabled={true}
+          >
+            Siguiente
+          </Button>
+        </div>
       </Card>
 
       {/* Modal para crear/editar empresa */}
@@ -446,7 +496,7 @@ const Empresas: React.FC = () => {
                 {editingEmpresa ? 'Editar Empresa' : 'Nueva Empresa'}
               </h2>
               <Button
-                variant="outline"
+                variant="minimal"
                 size="sm"
                 onClick={() => {
                   setIsCreateModalOpen(false);
@@ -469,6 +519,8 @@ const Empresas: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="razon_social">Razón Social *</Label>
                   <Input
+                    variant="minimal"
+                    fieldSize="sm"
                     id="razon_social"
                     value={formData.razon_social}
                     onChange={(e) => setFormData({ ...formData, razon_social: e.target.value })}
@@ -479,6 +531,8 @@ const Empresas: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="nombre_comercial">Nombre Comercial *</Label>
                   <Input
+                    variant="minimal"
+                    fieldSize="sm"
                     id="nombre_comercial"
                     value={formData.nombre_comercial}
                     onChange={(e) => setFormData({ ...formData, nombre_comercial: e.target.value })}
@@ -492,6 +546,8 @@ const Empresas: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="ruc">RUC *</Label>
                   <Input
+                    variant="minimal"
+                    fieldSize="sm"
                     id="ruc"
                     value={formData.ruc}
                     onChange={(e) => setFormData({ ...formData, ruc: e.target.value })}
@@ -528,6 +584,8 @@ const Empresas: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="correo_referencia">Correo de Referencia</Label>
                   <Input
+                    variant="minimal"
+                    fieldSize="sm"
                     id="correo_referencia"
                     type="email"
                     value={formData.correo_referencia}
@@ -538,6 +596,8 @@ const Empresas: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="numero_referencia">Número de Referencia</Label>
                   <Input
+                    variant="minimal"
+                    fieldSize="sm"
                     id="numero_referencia"
                     value={formData.numero_referencia}
                     onChange={(e) => setFormData({ ...formData, numero_referencia: e.target.value })}
@@ -560,7 +620,8 @@ const Empresas: React.FC = () => {
               <div className="flex justify-end space-x-4 pt-4">
                 <Button 
                   type="button" 
-                  variant="outline" 
+                  variant="minimal" 
+                  size="sm"
                   onClick={() => {
                     setIsCreateModalOpen(false);
                     resetForm();
@@ -568,15 +629,15 @@ const Empresas: React.FC = () => {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={formLoading}>
+                <Button type="submit" variant="minimal" size="sm" disabled={formLoading}>
                   {formLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Guardando...
                     </>
                   ) : (
-                    editingEmpresa ? 'Actualizar' : 'Crear'
-                  )} Empresa
+                    <>{editingEmpresa ? 'Actualizar' : 'Crear'} Empresa</>
+                  )}
                 </Button>
               </div>
             </form>
@@ -589,4 +650,5 @@ const Empresas: React.FC = () => {
     </div>
   );
 };
+
 export default Empresas;
