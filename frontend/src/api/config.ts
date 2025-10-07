@@ -10,6 +10,7 @@ const API_CONFIG = {
     PROFILE: '/api/profile/',
     EMPRESAS: '/api/empresas/',
     ADD_EMPRESAS: '/api/empresas/add/',
+    DEACTIVATE_EMPRESAS: (id: number) => `/api/empresas/${id}/deactivate/`,
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
@@ -27,6 +28,7 @@ export const API_URLS = {
   PROFILE: getApiUrl(API_CONFIG.ENDPOINTS.PROFILE),
   EMPRESAS: getApiUrl(API_CONFIG.ENDPOINTS.EMPRESAS),
   ADD_EMPRESAS: getApiUrl(API_CONFIG.ENDPOINTS.ADD_EMPRESAS),
+  DEACTIVATE_EMPRESAS: (id: number) => getApiUrl(API_CONFIG.ENDPOINTS.DEACTIVATE_EMPRESAS(id)),
 };
 
 export const APP_KEY = API_CONFIG.APP_KEY;
