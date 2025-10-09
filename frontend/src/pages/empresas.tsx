@@ -7,9 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Building2, AlertCircle, X, Edit2, Trash2 } from "lucide-react";
+import { Plus, Building2, AlertCircle, X, Edit2, Power } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
@@ -68,6 +78,10 @@ const Empresas: React.FC = () => {
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
 
+  // Estados para el AlertDialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [empresaToDelete, setEmpresaToDelete] = useState<{ id: number; activo: boolean } | null>(null);
+
   const [formData, setFormData] = useState<EmpresaFormData>({
     razon_social: '',
     nombre_comercial: '',
@@ -85,12 +99,20 @@ const Empresas: React.FC = () => {
 
   }, []);
 
+  useEffect(() => {
+    fetchEmpresas();
+  }, []);
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [searchTerm, estadoFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
+
+
   const fetchEmpresas = async () => {
     try {
       setLoading(true);
-
       const token = localStorage.getItem('access_token');
-
       const response = await fetch(API_URLS.EMPRESAS, {
         method: 'GET',
         headers: {
@@ -108,28 +130,20 @@ const Empresas: React.FC = () => {
       const data: ApiResponse = await response.json();
       setEmpresas(data.empresas || []);
       setError(null);
-      console.log(data)
+      // console.log(data)
     } catch (err) {
-      console.error('Error al obtener empresas:', err);
+      // console.error('Error al obtener empresas:', err);
       setError(err instanceof Error ? err.message : 'Error al cargar las empresas');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchEmpresas();
-  }, []);
-
-  // Resetear a página 1 cuando cambian los filtros
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [searchTerm, estadoFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
 
   // Función para crear una nueva empresa
   const createEmpresa = async () => {
-    try {
 
+    try {
       setFormLoading(true);
       const token = localStorage.getItem('access_token');
 
@@ -159,8 +173,8 @@ const Empresas: React.FC = () => {
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
-      const result = await response.json();
-      console.log('Empresa creada:', result);
+      // const result = await response.json();
+      // console.log('Empresa creada:', result);
 
       // Actualizar la lista de empresas
       await fetchEmpresas();
@@ -177,16 +191,74 @@ const Empresas: React.FC = () => {
       setIsCreateModalOpen(false);
       setError(null);
     } catch (err) {
-      console.error('Error al crear empresa:', err);
+      // console.error('Error al crear empresa:', err);
       setError(err instanceof Error ? err.message : 'Error al crear la empresa');
     } finally {
       setFormLoading(false);
     }
   };
 
-  //funcion para inactivar una empresa
-  const handleDelete = async (id: number) => {
+  const updateEmpresa = async (id:number) => {
+    try {
 
+      setFormLoading(true);
+      const token = localStorage.getItem('access_token');
+      const payload = {
+        razon_social: formData.razon_social,
+        nombre_comercial: formData.nombre_comercial,
+        ruc: formData.ruc,
+        direccion: formData.direccion,
+        activo: formData.activo,
+        ...(formData.correo_referencia && { correo_referencia: formData.correo_referencia }),
+        ...(formData.numero_referencia && { numero_referencia: formData.numero_referencia }),
+      };
+
+      const response = await fetch(API_URLS.UPDATE_EMPRESAS(id), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-App-Key': APP_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      // const result = await response.json();
+      // console.log('Empresa actualizada:', result);
+
+      // Actualizar la lista de empresas
+      await fetchEmpresas();
+
+      // Mostrar toast de éxito
+      toast({
+        title: "¡Empresa actualizada exitosamente!",
+        description: `${formData.razon_social} ha sido actualizada`,
+        variant: "success",
+      });
+
+      // Limpiar formulario y cerrar modal
+      resetForm();
+      setIsCreateModalOpen(false);
+      setError(null);
+    } catch (err) {
+      // console.error('Error al crear empresa:', err);
+      setError(err instanceof Error ? err.message : 'Error al crear la empresa');
+    } 
+  };
+  
+  // Función para abrir el dialog de confirmación
+  const openDeleteDialog = (id: number, activo: boolean) => {
+    setEmpresaToDelete({ id, activo });
+    setDeleteDialogOpen(true);
+  };
+
+  //funcion para inactivar una empresa (ejecuta después de confirmar)
+  const handleDelete = async (id: number, activo: boolean) => {
     try {
 
       const token = localStorage.getItem('access_token');
@@ -197,6 +269,7 @@ const Empresas: React.FC = () => {
           'Content-Type': 'application/json',
           'X-App-Key': APP_KEY
         },
+        body: JSON.stringify({ activo })
       });
 
       if (!response.ok) {
@@ -204,11 +277,11 @@ const Empresas: React.FC = () => {
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
-      const result = await response.json();
-      console.log('Empresa creada:', result);
+      // const result = await response.json();
+      // console.log('Estado de empresa cambiado:', result);
 
       toast({
-        title: "¡Empresa inactivada exitosamente!",
+        title: activo ? "¡Empresa inactivada exitosamente!" : "¡Empresa activada exitosamente!",
         variant: "success",
       });
 
@@ -217,21 +290,26 @@ const Empresas: React.FC = () => {
 
     } catch (err) {
 
-      console.error('Error al inactivar empresa:', err);
-      setError(err instanceof Error ? err.message : 'Error al crear la empresa');
+      // console.error('Error al cambiar estado de empresa:', err);
+      setError(err instanceof Error ? err.message : 'Error al cambiar el estado de la empresa');
 
-    } 
+    } finally {
+      setDeleteDialogOpen(false);
+      setEmpresaToDelete(null);
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingEmpresa) {
-      // TODO: Implementar actualización
-      console.log('Actualizando empresa:', editingEmpresa.id);
+      await updateEmpresa(editingEmpresa.id)
+      // console.log('Actualizando empresa:', editingEmpresa.id);
     } else {
       await createEmpresa();
     }
   };
+
+  
 
   const resetForm = () => {
     setFormData({
@@ -535,16 +613,21 @@ const Empresas: React.FC = () => {
                             <td className="px-3 py-1 text-center text-gray-700">
                               {new Date(empresa.created_at).toLocaleDateString('es-ES')}
                             </td>
-                            <td className="px-3 py-1 text-center text-gray-700">
-                            {empresa.activo ? 'SI' : 'NO'}
+                            <td className="px-3 py-1 text-center">
+                              <div className="flex items-center justify-center">
+                                <div className={`w-3 h-3 rounded-full ${empresa.activo ? 'bg-green-500' : 'bg-red-500'}`} 
+                                     title={empresa.activo ? 'Activo' : 'Inactivo'}>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-3 py-1 text-center">
-                              {empresa.activo && (
+                     
                                 <div className="flex items-center justify-center gap-2">
                                   <Button
                                     variant="minimal"
                                     size="xs"
                                     onClick={() => handleEdit(empresa)}
+                                    disabled={!empresa.activo}
                                     className="h-7 w-7 p-0"
                                   >
                                     <Edit2 className="h-3 w-3" />
@@ -552,13 +635,13 @@ const Empresas: React.FC = () => {
                                   <Button
                                     variant="minimal"
                                     size="xs"
-                                    onClick={() => handleDelete(empresa.id)}
+                                    onClick={() => openDeleteDialog(empresa.id, empresa.activo)}
                                     className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
-                                    <Trash2 className="h-3 w-3" />
+                                    <Power className="h-3 w-3" />
                                   </Button>
                                 </div>
-                              )}
+                              
                             </td>
                           </tr>
                         ))}
@@ -771,6 +854,41 @@ const Empresas: React.FC = () => {
         </div>
       </div>
       <Toaster />
+      
+      {/* AlertDialog para confirmar activación/inactivación */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {empresaToDelete?.activo ? 'Inactivar Empresa' : 'Activar Empresa'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {empresaToDelete?.activo 
+                ? '¿Está seguro de inactivar esta empresa? La empresa no aparecerá en los listados activos.'
+                : '¿Está seguro de activar esta empresa? La empresa volverá a estar disponible en el sistema.'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteDialogOpen(false);
+              setEmpresaToDelete(null);
+            }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (empresaToDelete) {
+                  handleDelete(empresaToDelete.id, empresaToDelete.activo);
+                }
+              }}
+              className={empresaToDelete?.activo ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+            >
+              {empresaToDelete?.activo ? 'Inactivar' : 'Activar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
