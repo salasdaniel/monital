@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
-import Dashboard from './pages/dashboard';
-import Empresas from './pages/empresas';
+import Dashboard from './pages/Dashboard';
+import Empresas from './pages/Empresas';
+import Users from './pages/Users';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -24,6 +25,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Empresas />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute>
+              <Users />
             </ProtectedRoute>
           } 
         />

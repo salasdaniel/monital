@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Monitor,
+  Users
 } from 'lucide-react';
 
 interface MenuItem {
@@ -47,6 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Empresas',
       icon: <Building2 className="h-5 w-5" />,
       href: '/empresas',
+      roles: ['admin', 'user', 'moderator']
+    },
+    {
+      id: 'users',
+      label: 'Usuarios',
+      icon: <Users className="h-5 w-5" />,
+      href: '/users',
       roles: ['admin', 'user', 'moderator']
     },
   ];
