@@ -23,6 +23,22 @@ import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power } from "lucide-r
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
+//combo box
+import { Check, ChevronsUpDown } from "lucide-react"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover"
+
 // Interfaces basadas en la API de usuarios
 interface Usuario {
   id: string;
@@ -55,6 +71,20 @@ interface ApiResponse {
   usuarios: Usuario[];
 }
 
+interface Empresa {
+  id: number;
+  razon_social: string;
+  nombre_comercial: string;
+  ruc: string;
+  activo: boolean;
+}
+
+interface EmpresasApiResponse {
+  message: string;
+  count: number;
+  empresas: Empresa[];
+}
+
 interface UserData {
   username: string;
   role?: string;
@@ -82,6 +112,8 @@ const Users: React.FC = () => {
   // Estados para el AlertDialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usuarioToDelete, setUsuarioToDelete] = useState<{ id: string; activo: boolean } | null>(null);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [openEmpresaCombobox, setOpenEmpresaCombobox] = useState(false);
 
   const [formData, setFormData] = useState<UsuarioFormData>({
     email: '',
@@ -103,6 +135,10 @@ const Users: React.FC = () => {
 
   useEffect(() => {
     fetchUsuarios();
+  }, []);
+
+  useEffect(() => {
+    fetchEmpresas();
   }, []);
 
   // Resetear a página 1 cuando cambian los filtros
@@ -138,6 +174,32 @@ const Users: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Error al cargar los usuarios');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmpresas = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(API_URLS.EMPRESAS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-App-Key': APP_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+
+      const data: EmpresasApiResponse = await response.json();
+      // Filtrar solo empresas activas
+      const empresasActivas = data.empresas?.filter(e => e.activo) || [];
+      setEmpresas(empresasActivas);
+    } catch (err) {
+      console.error('Error al obtener empresas:', err);
+      // No mostramos toast de error porque no es crítico
     }
   };
 
@@ -206,7 +268,7 @@ const Users: React.FC = () => {
 
       setFormLoading(true);
       const token = localStorage.getItem('access_token');
-      
+
       // Construir el payload - password es opcional en update
       const payload: any = {
         email: formData.email,
@@ -217,7 +279,7 @@ const Users: React.FC = () => {
         role: formData.role,
         empresa_id: formData.empresa_id ? parseInt(formData.empresa_id) : null,
       };
-      
+
       // Solo agregar password si se proporcionó uno nuevo
       if (formData.password) {
         payload.password = formData.password;
@@ -237,6 +299,8 @@ const Users: React.FC = () => {
         const errorData = await response.text();
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
+
+      console.log(response)
 
       // const result = await response.json();
       // console.log('Usuario actualizado:', result);
@@ -258,9 +322,9 @@ const Users: React.FC = () => {
     } catch (err) {
       // console.error('Error al actualizar usuario:', err);
       setError(err instanceof Error ? err.message : 'Error al actualizar el usuario');
-    } 
+    }
   };
-  
+
   // Función para abrir el dialog de confirmación
   const openDeleteDialog = (id: string, activo: boolean) => {
     setUsuarioToDelete({ id, activo });
@@ -279,7 +343,7 @@ const Users: React.FC = () => {
           'Content-Type': 'application/json',
           'X-App-Key': APP_KEY
         },
-        body: JSON.stringify({ activo})
+        body: JSON.stringify({ activo })
       });
 
       if (!response.ok) {
@@ -319,7 +383,7 @@ const Users: React.FC = () => {
     }
   };
 
-  
+
 
   const resetForm = () => {
     setFormData({
@@ -631,33 +695,33 @@ const Users: React.FC = () => {
                             </td>
                             <td className="px-3 py-1 text-center">
                               <div className="flex items-center justify-center">
-                                <div className={`w-3 h-3 rounded-full ${usuario.activo ? 'bg-green-500' : 'bg-red-500'}`} 
-                                     title={usuario.activo ? 'Activo' : 'Inactivo'}>
+                                <div className={`w-3 h-3 rounded-full ${usuario.activo ? 'bg-green-500' : 'bg-red-500'}`}
+                                  title={usuario.activo ? 'Activo' : 'Inactivo'}>
                                 </div>
                               </div>
                             </td>
                             <td className="px-3 py-1 text-center">
-                     
-                                <div className="flex items-center justify-center gap-2">
-                                  <Button
-                                    variant="minimal"
-                                    size="xs"
-                                    onClick={() => handleEdit(usuario)}
-                                    disabled={!usuario.activo}
-                                    className="h-7 w-7 p-0"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="minimal"
-                                    size="xs"
-                                    onClick={() => openDeleteDialog(usuario.id, usuario.activo)}
-                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Power className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              
+
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="minimal"
+                                  size="xs"
+                                  onClick={() => handleEdit(usuario)}
+                                  disabled={!usuario.activo}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="minimal"
+                                  size="xs"
+                                  onClick={() => openDeleteDialog(usuario.id, usuario.activo)}
+                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Power className="h-3 w-3" />
+                                </Button>
+                              </div>
+
                             </td>
                           </tr>
                         ))}
@@ -842,16 +906,59 @@ const Users: React.FC = () => {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="empresa_id">Empresa</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="empresa_id"
-                            type="number"
-                            value={formData.empresa_id}
-                            onChange={(e) => setFormData({ ...formData, empresa_id: e.target.value })}
-                            placeholder="ID de empresa (opcional)"
-                          />
+                          <Label htmlFor="empresa">Empresa</Label>
+                          <Popover open={openEmpresaCombobox} onOpenChange={setOpenEmpresaCombobox}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openEmpresaCombobox}
+                                className="w-full justify-between"
+                              >
+                                {formData.empresa_id
+                                  ? empresas.find((empresa) => empresa.id.toString() === formData.empresa_id)?.nombre_comercial || "Selecciona una empresa"
+                                  : "Selecciona una empresa"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput placeholder="Buscar empresa..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>No se encontró ninguna empresa.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandItem
+                                      value="sin-empresa"
+                                      onSelect={() => {
+                                        setFormData({ ...formData, empresa_id: '' });
+                                        setOpenEmpresaCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${formData.empresa_id === '' ? 'opacity-100' : 'opacity-0'}`}
+                                      />
+                                      Sin empresa
+                                    </CommandItem>
+                                    {empresas.map((empresa) => (
+                                      <CommandItem
+                                        key={empresa.id}
+                                        value={empresa.id.toString()}
+                                        onSelect={() => {
+                                          setFormData({ ...formData, empresa_id: empresa.id.toString() });
+                                          setOpenEmpresaCombobox(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={`mr-2 h-4 w-4 ${formData.empresa_id === empresa.id.toString() ? 'opacity-100' : 'opacity-0'}`}
+                                        />
+                                        {empresa.nombre_comercial} - {empresa.ruc}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
 
@@ -898,7 +1005,7 @@ const Users: React.FC = () => {
         </div>
       </div>
       <Toaster />
-      
+
       {/* AlertDialog para confirmar activación/desactivación */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -907,7 +1014,7 @@ const Users: React.FC = () => {
               {usuarioToDelete?.activo ? 'Desactivar Usuario' : 'Activar Usuario'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {usuarioToDelete?.activo 
+              {usuarioToDelete?.activo
                 ? '¿Está seguro de desactivar este usuario? El usuario no podrá acceder al sistema.'
                 : '¿Está seguro de activar este usuario? El usuario podrá volver a acceder al sistema.'
               }
