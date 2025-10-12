@@ -19,7 +19,7 @@ import {
 } from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power } from "lucide-react";
+import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
@@ -114,6 +114,7 @@ const Users: React.FC = () => {
   const [usuarioToDelete, setUsuarioToDelete] = useState<{ id: string; activo: boolean } | null>(null);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [openEmpresaCombobox, setOpenEmpresaCombobox] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState<UsuarioFormData>({
     email: '',
@@ -145,6 +146,24 @@ const Users: React.FC = () => {
   useEffect(() => {
     setPaginaActual(1);
   }, [searchTerm, estadoFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
+
+  // Asignar automáticamente empresa ID 1 cuando el rol es admin
+  useEffect(() => {
+    if (formData.role === 'admin') {
+      setFormData(prev => ({ ...prev, empresa_id: '1' }));
+    }
+  }, [formData.role]);
+
+  // Función para generar contraseña aleatoria
+  const generatePassword = (length: number = 8): string => {
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    return password;
+  };
 
 
   const fetchUsuarios = async () => {
@@ -206,6 +225,15 @@ const Users: React.FC = () => {
 
   // Función para crear un nuevo usuario
   const createUsuario = async () => {
+    // Validar longitud de contraseña
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error de validación",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setFormLoading(true);
@@ -264,6 +292,16 @@ const Users: React.FC = () => {
   };
 
   const updateUsuario = async (id: string) => {
+    // Validar longitud de contraseña si se está cambiando
+    if (formData.password && formData.password.length < 6) {
+      toast({
+        title: "Error de validación",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
 
       setFormLoading(true);
@@ -392,12 +430,13 @@ const Users: React.FC = () => {
       last_name: '',
       ruc: '',
       username: '',
-      password: '',
+      password: generatePassword(8), // Generar contraseña automática
       role: 'user',
       empresa_id: '',
     });
     setEditingUsuario(null);
     setError(null);
+    setShowPassword(false); // Resetear visibilidad de contraseña
   };
 
   // Función para manejar la edición
@@ -878,17 +917,52 @@ const Users: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="password">{editingUsuario ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="password"
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            placeholder="••••••••"
-                            required={!editingUsuario}
-                          />
+                          <div className="flex justify-between items-center">
+                            <Label htmlFor="password">
+                              {editingUsuario ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
+                            </Label>
+                            {!editingUsuario && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFormData({ ...formData, password: generatePassword(8) })}
+                                className="h-auto py-1 px-2 text-xs"
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Generar
+                              </Button>
+                            )}
+                          </div>
+                          <div className="relative">
+                            <Input
+                              variant="minimal"
+                              fieldSize="sm"
+                              id="password"
+                              type={showPassword ? "text" : "password"}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder="••••••••"
+                              required={!editingUsuario}
+                              className="pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4 text-gray-500" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-gray-500" />
+                              )}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Mínimo 6 caracteres
+                          </p>
                         </div>
                       </div>
 
@@ -907,13 +981,21 @@ const Users: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="empresa">Empresa</Label>
-                          <Popover open={openEmpresaCombobox} onOpenChange={setOpenEmpresaCombobox}>
+                          <Popover 
+                            open={openEmpresaCombobox && formData.role !== 'admin'} 
+                            onOpenChange={(open) => {
+                              if (formData.role !== 'admin') {
+                                setOpenEmpresaCombobox(open);
+                              }
+                            }}
+                          >
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={openEmpresaCombobox}
                                 className="w-full justify-between"
+                                disabled={formData.role === 'admin'}
                               >
                                 {formData.empresa_id
                                   ? empresas.find((empresa) => empresa.id.toString() === formData.empresa_id)?.nombre_comercial || "Selecciona una empresa"
@@ -959,6 +1041,11 @@ const Users: React.FC = () => {
                               </Command>
                             </PopoverContent>
                           </Popover>
+                          {formData.role === 'admin' && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Los administradores se asignan automáticamente a la empresa principal
+                            </p>
+                          )}
                         </div>
                       </div>
 
