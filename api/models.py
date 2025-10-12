@@ -10,6 +10,14 @@ class User(models.Model):
     username = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=128)
     role = models.CharField(max_length=20, choices=[('admin', 'Admin'), ('user', 'User')])
+    empresa = models.ForeignKey(
+        'Empresa',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="usuarios"
+    )
+    activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
