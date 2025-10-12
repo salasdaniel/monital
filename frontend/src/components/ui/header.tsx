@@ -4,8 +4,14 @@ import { User, LogOut } from "lucide-react";
 import { getUser, logout } from "../../utils/auth";
 
 interface UserData {
-  username: string;
+  email?: string;
+  empresa_id?: number;
+  empresa_nombre?: string;
+  last_name?: string;
+  name?: string;
   role?: string;
+  ruc?: string;
+  username: string;
 }
 
 interface HeaderProps {
@@ -20,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
     // Obtener datos del usuario desde localStorage
     const userData = getUser();
     setUser(userData);
+    // console.log(userData);
   }, []);
 
   const handleLogout = () => {
@@ -42,11 +49,10 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
             <div className="flex items-center space-x-2">
               <User className="h-5 w-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">
-                {user?.username || 'Usuario'}
+                {user?.name + ' ' + user?.last_name || 'Usuario'}
+                
               </span>
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full capitalize">
-                {user?.role || 'user'}
-              </span>
+
             </div>
             <Button 
               variant="outline" 

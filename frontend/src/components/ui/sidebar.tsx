@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './button';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Home, 
+import {
+  Home,
   Building2,
   ChevronLeft,
   ChevronRight,
   Monitor,
   Users
 } from 'lucide-react';
+
+
+import { getUser } from "../../utils/auth";
 
 interface MenuItem {
   id: string;
@@ -20,16 +23,21 @@ interface MenuItem {
   roles: string[]; // Roles que pueden ver este menú
 }
 
+interface UserData {
+  empresa_id?: number;
+  empresa_nombre?: string;
+  empresa_ruc?: string;
+}
 interface SidebarProps {
   userRole: string;
   currentPath?: string;
   onMenuClick?: (menuId: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  userRole, 
+const Sidebar: React.FC<SidebarProps> = ({
+  userRole,
   currentPath = '/dashboard',
-  onMenuClick 
+  onMenuClick
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate()
@@ -60,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Filtrar menús según el rol del usuario
-  const filteredMenuItems = menuItems.filter(item => 
+  const filteredMenuItems = menuItems.filter(item =>
     item.roles.includes(userRole.toLowerCase())
   );
 
@@ -72,6 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
+  const [user, setUser] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    // Obtener datos del usuario desde localStorage
+    const userData = getUser();
+    setUser(userData);
+    // console.log(userData);
+  }, []);
 
   return (
     <div className={cn(
@@ -87,11 +103,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Monitor className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Monital</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{user?.empresa_nombre || 'Empresa'}</h2>
+                <p className="text-sm text-gray-500">{user?.empresa_ruc || 'RUC'}</p>
               </div>
             </div>
           )}
-          
+
           <Button
             variant="ghost"
             size="sm"
