@@ -7,7 +7,7 @@ from api.models import Venta, VentaLinea, Empresa
 from datetime import datetime
 from decimal import Decimal
 import json
-from .views import validate_basic_auth
+from .views import validate_basic_auth,  validate_app_key, validate_jwt
 
 
 
@@ -15,41 +15,7 @@ from .views import validate_basic_auth
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RegistrarVentaView(View):
-    """
-    API para registrar ventas desde solución flota
-    
-    Endpoint: /registrar
-    Método: POST
-    Seguridad: Basic Auth (Usuario y Password en el header)
-    
-    Parámetros de entrada:
-    - tipo: VT/NC (Ventas o Notas de Crédito)
-    - identificadorTr: Número único de flota
-    - ticket: Número de ticket
-    - fecha: Fecha de venta (formato: yyyy-MM-dd HH:mm:ss)
-    - codigoCliente: Código del cliente
-    - ruc: RUC del cliente
-    - nombreCliente: Nombre del cliente
-    - codigoEstacion: Código de la estación
-    - nombreEstacion: Nombre de la estación
-    - codigoMoneda: Código de moneda
-    - lineas: Array de líneas de venta (DLinea)
-    - total: Total de la venta
-    - documentoChofer: CI del chofer
-    - nombreChofer: Nombre del chofer
-    - matricula: Matrícula del vehículo
-    - kilometraje: Kilometraje
-    - tarjeta: Número de tarjeta
-    
-    DLinea:
-    - codigoProducto: Código del producto
-    - nombreProducto: Nombre del producto
-    - precioUnitario: Precio unitario
-    - cantidad: Cantidad
-    
-    Respuesta:
-    - ok: True/False
-    """
+  
     
     def post(self, request):
         # Validar autenticación
@@ -169,4 +135,92 @@ class RegistrarVentaView(View):
             return JsonResponse({
                 'ok': False,
                 'error': f'Error al procesar la venta: {str(e)}'
+            }, status=500)
+
+
+
+class VentaListView(View):
+    def get(self, request):
+        # Validar app_key por seguridad
+        invalid = validate_app_key(request)
+        if invalid:
+            return invalid
+
+        # Validar JWT del usuario autenticado
+        user, error_response = validate_jwt(request)
+        if error_response:
+            return error_response
+
+        try:
+            # Obtener el parámetro opcional empresa_id desde query string
+            empresa_id = request.GET.get('empresa_id')
+            
+            # Filtrar ventas
+            if empresa_id:
+                # Validar que la empresa exista
+                try:
+                    empresa = Empresa.objects.get(id=empresa_id)
+                    ventas = Venta.objects.filter(empresa=empresa).order_by('-created_at')
+                except Empresa.DoesNotExist:
+                    return JsonResponse({
+                        'error': 'La empresa especificada no existe'
+                    }, status=400)
+            else:
+                # Obtener todas las ventas
+                ventas = Venta.objects.all().order_by('-created_at')
+            
+            # Serializar los datos
+            ventas_data = []
+            for venta in ventas:
+                # Obtener las líneas de la venta
+                lineas = venta.lineas.all()
+                lineas_data = []
+                for linea in lineas:
+                    lineas_data.append({
+                        'id': linea.id,
+                        'codigo_producto': linea.codigo_producto,
+                        'nombre_producto': linea.nombre_producto,
+                        'precio_unitario': str(linea.precio_unitario) if linea.precio_unitario else None,
+                        'cantidad': str(linea.cantidad) if linea.cantidad else None,
+                        'subtotal': str(linea.subtotal) if linea.subtotal else None,
+                    })
+                
+                # Construir el objeto de venta
+                venta_data = {
+                    'id': venta.id,
+                    'tipo': venta.tipo,
+                    'identificador_tr': venta.identificador_tr,
+                    'ticket': venta.ticket,
+                    'fecha': venta.fecha.strftime('%Y-%m-%d %H:%M:%S') if venta.fecha else None,
+                    'codigo_cliente': venta.codigo_cliente,
+                    'ruc_cliente': venta.ruc_cliente,
+                    'nombre_cliente': venta.nombre_cliente,
+                    'codigo_estacion': venta.codigo_estacion,
+                    'nombre_estacion': venta.nombre_estacion,
+                    'codigo_moneda': venta.codigo_moneda,
+                    'total': str(venta.total) if venta.total else None,
+                    'documento_chofer': venta.documento_chofer,
+                    'nombre_chofer': venta.nombre_chofer,
+                    'matricula': venta.matricula,
+                    'kilometraje': venta.kilometraje,
+                    'tarjeta': venta.tarjeta,
+                    'empresa_id': venta.empresa_id,
+                    'empresa_nombre': venta.empresa.nombre_comercial if venta.empresa else None,
+                    'empresa_ruc': venta.empresa.ruc if venta.empresa else None,
+                    'lineas': lineas_data,
+                    'created_at': venta.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': venta.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                }
+                
+                ventas_data.append(venta_data)
+            
+            return JsonResponse({
+                'message': 'Ventas obtenidas exitosamente',
+                'count': len(ventas_data),
+                'ventas': ventas_data
+            }, status=200)
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Error al obtener las ventas: {str(e)}'
             }, status=500)
