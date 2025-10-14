@@ -54,7 +54,6 @@ class Venta(models.Model):
         null=True,
         blank=True,
         related_name="ventas",
-        to_field='ruc'
     )
     tipo = models.CharField(max_length=2, null=True, blank=True)
     identificador_tr = models.CharField(max_length=100, null=True, blank=True)
@@ -78,6 +77,7 @@ class Venta(models.Model):
     class Meta:
         db_table = 'api_venta'
         ordering = ['-created_at']
+
 
     def __str__(self):
         return f"Venta {self.ticket or self.id}"
