@@ -3,6 +3,7 @@ from .views.views import hello_world
 from .views.auth_views import LoginView, ProfileView
 from .views.empresas_views import EmpresaAddView, EmpresaListView, EmpresaDeactivateView, EmpresaUpdateView
 from .views.user_views import UserAddView, UserListView, UserUpdateView, UserDeactivateView
+from .views.shell_views import RegistrarVentaView
 
 
 urlpatterns = [
@@ -19,4 +20,7 @@ urlpatterns = [
     path('users/<uuid:pk>/update/', UserUpdateView.as_view(), name='user-update'),
     path('users/<uuid:pk>/deactivate/', UserDeactivateView.as_view(), name='user-deactivate'),
     path('users/', UserListView.as_view(), name='user-list'),
+    
+    # URL para Shell (integración flota)
+    path('registrar/', RegistrarVentaView.as_view(), name='registrar-venta'),
 ]

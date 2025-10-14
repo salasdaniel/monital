@@ -46,4 +46,62 @@ class Empresa(models.Model):
     def __str__(self):
         return self.nombre_comercial
 
+
+class Venta(models.Model):
+    empresa = models.ForeignKey(
+        'Empresa',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ventas",
+        to_field='ruc'
+    )
+    tipo = models.CharField(max_length=2, null=True, blank=True)
+    identificador_tr = models.CharField(max_length=100, null=True, blank=True)
+    ticket = models.CharField(max_length=100, null=True, blank=True)
+    fecha = models.DateTimeField(null=True, blank=True)
+    codigo_cliente = models.CharField(max_length=100, null=True, blank=True)
+    ruc_cliente = models.CharField(max_length=13, null=True, blank=True)
+    nombre_cliente = models.CharField(max_length=255, null=True, blank=True)
+    codigo_estacion = models.CharField(max_length=100, null=True, blank=True)
+    nombre_estacion = models.CharField(max_length=255, null=True, blank=True)
+    codigo_moneda = models.CharField(max_length=10, null=True, blank=True)
+    total = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    documento_chofer = models.CharField(max_length=50, null=True, blank=True)
+    nombre_chofer = models.CharField(max_length=255, null=True, blank=True)
+    matricula = models.CharField(max_length=50, null=True, blank=True)
+    kilometraje = models.IntegerField(null=True, blank=True)
+    tarjeta = models.CharField(max_length=50, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_venta'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Venta {self.ticket or self.id}"
+
+
+class VentaLinea(models.Model):
+    venta = models.ForeignKey(
+        'Venta',
+        on_delete=models.CASCADE,
+        related_name='lineas'
+    )
+    codigo_producto = models.CharField(max_length=100, null=True, blank=True)
+    nombre_producto = models.CharField(max_length=255, null=True, blank=True)
+    precio_unitario = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    cantidad = models.DecimalField(max_digits=15, decimal_places=3, null=True, blank=True)
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'api_venta_linea'
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.nombre_producto} - {self.cantidad}"
+
+
 # Create your models here.

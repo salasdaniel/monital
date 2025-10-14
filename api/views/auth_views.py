@@ -44,7 +44,19 @@ class LoginView(View):
 
         return JsonResponse({
             'access_token': token,
-            'user': {'username': user.username, 'role': user.role}
+            'user': {
+                'username': user.username, 
+                'role': user.role,
+                'id': str(user.id),
+                'empresa_id': user.empresa_id,
+                'empresa_nombre': user.empresa.razon_social,
+                'empresa_ruc': user.empresa.ruc,
+                'email': user.email,
+                'name': user.name,
+                'last_name': user.last_name,
+                'ruc': user.ruc,
+                'username': user.username
+                }
         })
 
 

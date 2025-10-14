@@ -6,6 +6,8 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Seguridad
+SHELL_API_USERNAME = config("SHELL_API_USERNAME", default="user")
+SHELL_API_PASSWORD = config("SHELL_API_PASSWORD", default="pass")
 SECRET_KEY = config("REACT_APP_SECRET_KEY", default="unsafe-secret")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = ["*"]
