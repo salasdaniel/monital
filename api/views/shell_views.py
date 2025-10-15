@@ -220,8 +220,7 @@ class VentaListView(View):
                     'documento_chofer': venta.documento_chofer,
                     'nombre_chofer': venta.nombre_chofer,
                     'matricula': venta.matricula,
-                    'matricula_id': venta.matricula_obj.id if venta.matricula_obj else None,
-
+                    'matricula_id': venta.matricula_id.id if venta.matricula_id else None,
                     'kilometraje': venta.kilometraje,
                     'tarjeta': venta.tarjeta,
                     'empresa_id': venta.empresa_id,
