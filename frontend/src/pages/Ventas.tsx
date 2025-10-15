@@ -78,9 +78,6 @@ const Ventas: React.FC = () => {
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
 
-  // Estado para expandir líneas de detalle
-  const [ventaExpandida, setVentaExpandida] = useState<number | null>(null);
-
   useEffect(() => {
     const userData = getUser();
     setUser(userData);
@@ -392,105 +389,38 @@ const Ventas: React.FC = () => {
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Estación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Total</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Items</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Detalle</th>
                         </tr>
                       </thead>
                       <tbody>
                         {ventasPaginadas.map((venta) => (
-                          <React.Fragment key={venta.id}>
-                            <tr className="">
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {venta.ticket || '-'}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {formatDate(venta.fecha)}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {venta.nombre_cliente || '-'}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {venta.empresa_nombre || '-'}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {venta.matricula || '-'}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700">
-                                {venta.nombre_estacion || '-'}
-                              </td>
-                              <td className="px-3 py-1 text-center text-gray-700 font-semibold">
-                                {formatCurrency(venta.total)}
-                              </td>
-                              <td className="px-3 py-1 text-center">
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                  {venta.lineas.length}
-                                </span>
-                              </td>
-                              <td className="px-3 py-1 text-center">
-                                <Button
-                                  variant="minimal"
-                                  size="xs"
-                                  onClick={() => setVentaExpandida(ventaExpandida === venta.id ? null : venta.id)}
-                                  className="h-7 w-7 p-0"
-                                >
-                                  {ventaExpandida === venta.id ? '▼' : '▶'}
-                                </Button>
-                              </td>
-                            </tr>
-                            
-                            {ventaExpandida === venta.id && (
-                              <tr>
-                                <td colSpan={9} className="px-4 py-4 bg-gray-50">
-                                  <div className="space-y-4">
-                                    <h4 className="font-semibold text-gray-900 mb-3">Detalle de Productos</h4>
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full text-sm">
-                                        <thead className="bg-white border-b">
-                                          <tr>
-                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Código</th>
-                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Producto</th>
-                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Cantidad</th>
-                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">P. Unit.</th>
-                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Subtotal</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                          {venta.lineas.map((linea) => (
-                                            <tr key={linea.id} className="hover:bg-white">
-                                              <td className="px-3 py-2 text-gray-900">{linea.codigo_producto || '-'}</td>
-                                              <td className="px-3 py-2 text-gray-900">{linea.nombre_producto || '-'}</td>
-                                              <td className="px-3 py-2 text-right text-gray-900">{linea.cantidad || '0'}</td>
-                                              <td className="px-3 py-2 text-right text-gray-900">{formatCurrency(linea.precio_unitario)}</td>
-                                              <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatCurrency(linea.subtotal)}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
-                                      <div>
-                                        <span className="text-xs text-gray-500">Chofer:</span>
-                                        <p className="text-sm font-medium text-gray-900">{venta.nombre_chofer || '-'}</p>
-                                        <p className="text-xs text-gray-500">{venta.documento_chofer || '-'}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-xs text-gray-500">Kilometraje:</span>
-                                        <p className="text-sm font-medium text-gray-900">{venta.kilometraje || '-'} km</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-xs text-gray-500">Tarjeta:</span>
-                                        <p className="text-sm font-medium text-gray-900">{venta.tarjeta || '-'}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-xs text-gray-500">Moneda:</span>
-                                        <p className="text-sm font-medium text-gray-900">{venta.codigo_moneda || '-'}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
+                          <tr key={venta.id} className="">
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.ticket || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {formatDate(venta.fecha)}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.nombre_cliente || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.empresa_nombre || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.matricula || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.nombre_estacion || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700 font-semibold">
+                              {formatCurrency(venta.total)}
+                            </td>
+                            <td className="px-3 py-1 text-center">
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                {venta.lineas.length}
+                              </span>
+                            </td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
