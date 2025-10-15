@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.conf import settings
-from api.models import Venta, VentaLinea, Empresa
+from api.models import Venta, VentaLinea, Empresa, Matricula, User
 from datetime import datetime
 from decimal import Decimal
 import json
@@ -61,21 +61,39 @@ class RegistrarVentaView(View):
                     empresa = Empresa.objects.get(ruc=ruc_cliente)
                 except Empresa.DoesNotExist:
                     # Crear la empresa automáticamente con los datos disponibles
+                    api_user = User.objects.get(username='apiUser')  # Usuario por defecto para creación
                     empresa = Empresa.objects.create(
                         razon_social=nombre_cliente,
                         nombre_comercial=nombre_cliente,
                         ruc=ruc_cliente,
                         direccion='',  # Campo vacío
-                        usuario_creacion=None,
+                        usuario_creacion=api_user,
                         correo_referencia=None,
                         numero_referencia=None,
                         activo=True
                     )
                     print(f"Empresa creada automáticamente - RUC: {ruc_cliente}, Nombre: {nombre_cliente}")
             
+            # Buscar o crear matrícula por nro_matricula (si existe)
+            matricula_obj = None
+            if matricula:
+                try:
+                    matricula_obj = Matricula.objects.get(nro_matricula=matricula)
+                except Matricula.DoesNotExist:
+                    # Crear la matrícula automáticamente vinculada a la empresa
+                    api_user = User.objects.get(username='apiUser')
+                    matricula_obj = Matricula.objects.create(
+                        nro_matricula=matricula,
+                        empresa=empresa,  # Vincular con la empresa si existe
+                        usuario_creacion=api_user,
+                        cod_interno=None
+                    )
+                    print(f"Matrícula creada automáticamente - Nro: {matricula}")
+            
             # Crear la venta
             venta = Venta.objects.create(
                 empresa=empresa,
+                matricula_id=matricula_obj,  # Asignar la FK con el objeto Matricula
                 tipo=tipo,
                 identificador_tr=identificador_tr,
                 ticket=ticket,
@@ -89,7 +107,7 @@ class RegistrarVentaView(View):
                 total=Decimal(str(total)) if total else None,
                 documento_chofer=documento_chofer,
                 nombre_chofer=nombre_chofer,
-                matricula=matricula,
+                matricula=matricula,  # Campo texto original de la API
                 kilometraje=kilometraje,
                 tarjeta=tarjeta
             )
@@ -202,6 +220,8 @@ class VentaListView(View):
                     'documento_chofer': venta.documento_chofer,
                     'nombre_chofer': venta.nombre_chofer,
                     'matricula': venta.matricula,
+                    'matricula_id': venta.matricula_obj.id if venta.matricula_obj else None,
+
                     'kilometraje': venta.kilometraje,
                     'tarjeta': venta.tarjeta,
                     'empresa_id': venta.empresa_id,

@@ -47,6 +47,33 @@ class Empresa(models.Model):
         return self.nombre_comercial
 
 
+class Matricula(models.Model):
+    id = models.AutoField(primary_key=True)
+    nro_matricula = models.CharField(max_length=50, unique=True)
+    cod_interno = models.CharField(max_length=100, null=True, blank=True)
+    empresa = models.ForeignKey(
+        'Empresa',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    usuario_creacion = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_matricula'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.nro_matricula
+
+
 class Venta(models.Model):
     empresa = models.ForeignKey(
         'Empresa',
@@ -54,6 +81,14 @@ class Venta(models.Model):
         null=True,
         blank=True,
         related_name="ventas",
+    )
+    matricula_id = models.ForeignKey(
+        'Matricula',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ventas",
+        db_column='matricula_id'
     )
     tipo = models.CharField(max_length=2, null=True, blank=True)
     identificador_tr = models.CharField(max_length=100, null=True, blank=True)
@@ -68,7 +103,7 @@ class Venta(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     documento_chofer = models.CharField(max_length=50, null=True, blank=True)
     nombre_chofer = models.CharField(max_length=255, null=True, blank=True)
-    matricula = models.CharField(max_length=50, null=True, blank=True)
+    matricula = models.CharField(max_length=50, null=True, blank=True)  # Campo texto que viene de la API
     kilometraje = models.IntegerField(null=True, blank=True)
     tarjeta = models.CharField(max_length=50, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
