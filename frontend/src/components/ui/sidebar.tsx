@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Monitor,
-  Users
+  Users,
+  Coins
 } from 'lucide-react';
 
 
@@ -63,6 +64,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Usuarios',
       icon: <Users className="h-5 w-5" />,
       href: '/users',
+      roles: ['admin', 'user', 'moderator']
+    },
+    {
+      id: 'ventas',
+      label: 'Ventas',
+      icon: <Coins className="h-5 w-5" />,
+      href: '/ventas',
       roles: ['admin', 'user', 'moderator']
     },
   ];
