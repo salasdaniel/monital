@@ -16,7 +16,7 @@ const API_CONFIG = {
     ADD_USERS: '/api/users/add/',
     DEACTIVATE_USERS: (id: string) => `/api/users/${id}/deactivate/`,
     UPDATE_USERS: (id: string) => `/api/users/${id}/update/`,
-    VENTAS: '/api/empresas/',
+    VENTAS: '/api/ventas/',
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
