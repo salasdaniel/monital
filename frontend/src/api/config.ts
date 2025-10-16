@@ -17,6 +17,7 @@ const API_CONFIG = {
     DEACTIVATE_USERS: (id: string) => `/api/users/${id}/deactivate/`,
     UPDATE_USERS: (id: string) => `/api/users/${id}/update/`,
     VENTAS: '/api/ventas/',
+    VENTAS_DETALLE: '/api/ventas/detalle/',
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
@@ -41,6 +42,7 @@ export const API_URLS = {
   DEACTIVATE_USERS: (id: string) => getApiUrl(API_CONFIG.ENDPOINTS.DEACTIVATE_USERS(id)),
   UPDATE_USERS: (id: string) => getApiUrl(API_CONFIG.ENDPOINTS.UPDATE_USERS(id)),
   VENTAS: getApiUrl(API_CONFIG.ENDPOINTS.VENTAS),
+  VENTAS_DETALLE: getApiUrl(API_CONFIG.ENDPOINTS.VENTAS_DETALLE),
 };
 
 export const APP_KEY = API_CONFIG.APP_KEY;
