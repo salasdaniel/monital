@@ -139,4 +139,41 @@ class VentaLinea(models.Model):
         return f"{self.nombre_producto} - {self.cantidad}"
 
 
+class VentaDetalle(models.Model):
+    """
+    Modelo unmanaged que representa la vista SQL vw_venta_detalle.
+    Esta vista combina datos de api_venta y api_venta_linea.
+    """
+    venta_id = models.IntegerField(primary_key=True)
+    tipo = models.CharField(max_length=2, null=True, blank=True)
+    identificador_tr = models.CharField(max_length=100, null=True, blank=True)
+    ticket = models.CharField(max_length=100, null=True, blank=True)
+    fecha = models.DateTimeField(null=True, blank=True)
+    codigo_cliente = models.CharField(max_length=100, null=True, blank=True)
+    ruc_cliente = models.CharField(max_length=13, null=True, blank=True)
+    nombre_cliente = models.CharField(max_length=255, null=True, blank=True)
+    codigo_estacion = models.CharField(max_length=100, null=True, blank=True)
+    nombre_estacion = models.CharField(max_length=255, null=True, blank=True)
+    codigo_moneda = models.CharField(max_length=10, null=True, blank=True)
+    nombre_chofer = models.CharField(max_length=255, null=True, blank=True)
+    matricula = models.CharField(max_length=50, null=True, blank=True)
+    codigo_producto = models.CharField(max_length=100, null=True, blank=True)
+    nombre_producto = models.CharField(max_length=255, null=True, blank=True)
+    cantidad = models.DecimalField(max_digits=15, decimal_places=3, null=True, blank=True)
+    precio_unitario = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    empresa_id = models.IntegerField(null=True, blank=True)
+    matricula_id = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        managed = False  # Django NO crea/modifica esta tabla
+        db_table = 'vw_venta_detalle'  # Nombre de la vista SQL
+        ordering = ['-fecha']
+        verbose_name = 'Detalle de Venta'
+        verbose_name_plural = 'Detalles de Ventas'
+
+    def __str__(self):
+        return f"Venta {self.ticket} - {self.nombre_producto}"
+
+
 # Create your models here.

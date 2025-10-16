@@ -3,7 +3,7 @@ from .views.views import hello_world
 from .views.auth_views import LoginView, ProfileView
 from .views.empresas_views import EmpresaAddView, EmpresaListView, EmpresaDeactivateView, EmpresaUpdateView
 from .views.user_views import UserAddView, UserListView, UserUpdateView, UserDeactivateView
-from .views.shell_views import RegistrarVentaView , VentaListView
+from .views.shell_views import RegistrarVentaView, VentaListView, VentaDetalleListView
 
 
 
@@ -24,6 +24,7 @@ urlpatterns = [
     
     # URLs para ventas
     path('ventas/', VentaListView.as_view(), name='venta-list'),
+    path('ventas/detalle/', VentaDetalleListView.as_view(), name='venta-detalle-list'),
 
     # URL para Shell (integración flota)
     path('registrar/', RegistrarVentaView.as_view(), name='registrar-venta'),

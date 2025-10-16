@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.conf import settings
-from api.models import Venta, VentaLinea, Empresa, Matricula, User
+from api.models import Venta, VentaLinea, Empresa, Matricula, User, VentaDetalle
 from datetime import datetime
 from decimal import Decimal
 import json
@@ -242,4 +242,74 @@ class VentaListView(View):
         except Exception as e:
             return JsonResponse({
                 'error': f'Error al obtener las ventas: {str(e)}'
+            }, status=500)
+
+
+class VentaDetalleListView(View):
+    def get(self, request):
+        # Validar app_key por seguridad
+        invalid = validate_app_key(request)
+        if invalid:
+            return invalid
+
+        # Validar JWT del usuario autenticado
+        user, error_response = validate_jwt(request)
+        if error_response:
+            return error_response
+
+        try:
+            # Obtener el parámetro opcional empresa_id desde query string
+            empresa_id = request.GET.get('empresa_id')
+            
+            # Filtrar detalles de ventas
+            if empresa_id:
+                # Validar que la empresa exista
+                try:
+                    empresa = Empresa.objects.get(id=empresa_id)
+                    detalles = VentaDetalle.objects.filter(empresa_id=empresa_id)
+                except Empresa.DoesNotExist:
+                    return JsonResponse({
+                        'error': 'La empresa especificada no existe'
+                    }, status=400)
+            else:
+                # Obtener todos los detalles de ventas
+                detalles = VentaDetalle.objects.all()
+            
+            # Serializar los datos
+            detalles_data = []
+            for detalle in detalles:
+                detalle_data = {
+                    'venta_id': detalle.venta_id,
+                    'tipo': detalle.tipo,
+                    'identificador_tr': detalle.identificador_tr,
+                    'ticket': detalle.ticket,
+                    'fecha': detalle.fecha.strftime('%Y-%m-%d %H:%M:%S') if detalle.fecha else None,
+                    'codigo_cliente': detalle.codigo_cliente,
+                    'ruc_cliente': detalle.ruc_cliente,
+                    'nombre_cliente': detalle.nombre_cliente,
+                    'codigo_estacion': detalle.codigo_estacion,
+                    'nombre_estacion': detalle.nombre_estacion,
+                    'codigo_moneda': detalle.codigo_moneda,
+                    'nombre_chofer': detalle.nombre_chofer,
+                    'matricula': detalle.matricula,
+                    'codigo_producto': detalle.codigo_producto,
+                    'nombre_producto': detalle.nombre_producto,
+                    'cantidad': str(detalle.cantidad) if detalle.cantidad else None,
+                    'precio_unitario': str(detalle.precio_unitario) if detalle.precio_unitario else None,
+                    'subtotal': str(detalle.subtotal) if detalle.subtotal else None,
+                    'empresa_id': detalle.empresa_id,
+                    'matricula_id': detalle.matricula_id,
+                }
+                
+                detalles_data.append(detalle_data)
+            
+            return JsonResponse({
+                'message': 'Detalles de ventas obtenidos exitosamente',
+                'count': len(detalles_data),
+                'detalles': detalles_data
+            }, status=200)
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Error al obtener los detalles de ventas: {str(e)}'
             }, status=500)
