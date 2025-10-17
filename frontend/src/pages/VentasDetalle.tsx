@@ -5,12 +5,15 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, Package, DollarSign, TrendingUp } from "lucide-react";
+import { ShoppingCart, Package, DollarSign, TrendingUp, Check, ChevronsUpDown } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
+import { cn } from "../lib/utils";
 
 // Interfaces basadas en la vista SQL vw_venta_detalle
 interface VentaDetalle {
@@ -68,6 +71,9 @@ const VentasDetalle: React.FC = () => {
   const [paginaActual, setPaginaActual] = useState<number>(1);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [empresaId, setEmpresaId] = useState<string>("todos");
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState<string>('');
+  const [fechaHasta, setFechaHasta] = useState<string>('');
 
   useEffect(() => {
     // Obtener datos del usuario desde localStorage
@@ -107,7 +113,7 @@ const VentasDetalle: React.FC = () => {
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, empresaId]);
+  }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, empresaId, fechaDesde, fechaHasta]);
 
   const fetchDetalles = async () => {
     try {
@@ -212,12 +218,32 @@ const VentasDetalle: React.FC = () => {
       const matchesSearch =
         detalle.ticket?.toLowerCase().includes(searchLower) ||
         detalle.nombre_cliente?.toLowerCase().includes(searchLower) ||
-  detalle.nombre_producto?.toLowerCase().includes(searchLower) ||
-  detalle.nombre_chofer?.toLowerCase().includes(searchLower) ||
+        detalle.nombre_producto?.toLowerCase().includes(searchLower) ||
+        detalle.nombre_chofer?.toLowerCase().includes(searchLower) ||
         detalle.matricula?.toLowerCase().includes(searchLower) ||
         detalle.codigo_producto?.toLowerCase().includes(searchLower);
 
-      return matchesSearch;
+      // Filtro de rango de fechas
+      let matchesFecha = true;
+      if (fechaDesde || fechaHasta) {
+        const fechaDetalle = detalle.fecha ? new Date(detalle.fecha) : null;
+        if (fechaDetalle) {
+          if (fechaDesde) {
+            const desde = new Date(fechaDesde);
+            desde.setHours(0, 0, 0, 0);
+            if (fechaDetalle < desde) matchesFecha = false;
+          }
+          if (fechaHasta) {
+            const hasta = new Date(fechaHasta);
+            hasta.setHours(23, 59, 59, 999);
+            if (fechaDetalle > hasta) matchesFecha = false;
+          }
+        } else {
+          matchesFecha = false;
+        }
+      }
+
+      return matchesSearch && matchesFecha;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -371,19 +397,87 @@ const VentasDetalle: React.FC = () => {
                     </div>
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
-                      <Select value={empresaId} onValueChange={setEmpresaId}>
-                        <SelectTrigger variant="minimal" size="sm" className="w-[240px]">
-                          <SelectValue placeholder="Todas las empresas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todas</SelectItem>
-                          {empresas.map((e) => (
-                            <SelectItem key={e.id} value={String(e.id)}>
-                              {e.nombre_comercial} ({e.ruc})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="minimal"
+                            size="sm"
+                            role="combobox"
+                            aria-expanded={openCombobox}
+                            className="w-[240px] justify-between"
+                          >
+                            {empresaId === "todos"
+                              ? "Todas las empresas"
+                              : empresas.find((e) => String(e.id) === empresaId)?.nombre_comercial || "Seleccionar..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[240px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Buscar empresa..." />
+                            <CommandList>
+                              <CommandEmpty>No se encontró empresa.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value="todos"
+                                  onSelect={() => {
+                                    setEmpresaId("todos");
+                                    setOpenCombobox(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      empresaId === "todos" ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  Todas las empresas
+                                </CommandItem>
+                                {empresas.map((empresa) => (
+                                  <CommandItem
+                                    key={empresa.id}
+                                    value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                    onSelect={() => {
+                                      setEmpresaId(String(empresa.id));
+                                      setOpenCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        empresaId === String(empresa.id) ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {empresa.nombre_comercial} ({empresa.ruc})
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex flex-col">
+                      <Label className="text-sm font-medium text-gray-700 mb-1">Fecha desde</Label>
+                      <Input
+                        type="date"
+                        value={fechaDesde}
+                        onChange={(e) => setFechaDesde(e.target.value)}
+                        variant="minimal"
+                        fieldSize="sm"
+                        className="w-[150px]"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label className="text-sm font-medium text-gray-700 mb-1">Fecha hasta</Label>
+                      <Input
+                        type="date"
+                        value={fechaHasta}
+                        onChange={(e) => setFechaHasta(e.target.value)}
+                        variant="minimal"
+                        fieldSize="sm"
+                        className="w-[150px]"
+                      />
                     </div>
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Ordenar por</Label>

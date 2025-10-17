@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Monitor,
   Users,
-  Coins
+  Coins,
+  ChartColumnIncreasing
 } from 'lucide-react';
 
 
@@ -76,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'ventas-detalle',
       label: 'Ventas Detalle',
-      icon: <Coins className="h-5 w-5" />,
+      icon: <ChartColumnIncreasing className="h-5 w-5" />,
       href: '/ventas-detalle',
       roles: ['admin', 'user', 'moderator']
     },
