@@ -79,7 +79,14 @@ const VentasDetalle: React.FC = () => {
     // Obtener datos del usuario desde localStorage
     const userData = getUser();
     setUser(userData);
-    setEmpresaId(userData.empresa_id);
+    
+    // Si el usuario es 'user', se asigna su empresa_id automáticamente
+    // Si es admin u otro rol, se inicializa en 0 (todas las empresas)
+    if (userData.role === 'user') {
+      setEmpresaId(userData.empresa_id);
+    } else {
+      setEmpresaId(0); // Admin ve todas las empresas por defecto
+    }
   }, []);
 
   useEffect(() => {
@@ -130,7 +137,16 @@ const VentasDetalle: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('access_token');
       const role = user?.role;
-      const url = (role === 'user') ? `${API_URLS.VENTAS_DETALLE}?empresa_id=${empresaId}` : API_URLS.VENTAS_DETALLE;
+      
+      // Construir URL: si es 'user' siempre envía su empresa_id
+      // Si es admin y seleccionó una empresa (empresaId > 0), envía ese filtro
+      // Si es admin y NO seleccionó empresa (empresaId === 0), no envía filtro (trae todas)
+      let url = API_URLS.VENTAS_DETALLE;
+      if (role === 'user') {
+        url = `${API_URLS.VENTAS_DETALLE}?empresa_id=${empresaId}`;
+      } else if (empresaId && empresaId > 0) {
+        url = `${API_URLS.VENTAS_DETALLE}?empresa_id=${empresaId}`;
+      }
   
       const response = await fetch(url, {
         method: 'GET',
@@ -186,41 +202,6 @@ const VentasDetalle: React.FC = () => {
 
   // Helpers de formateo
   const formatInteger = (n: number) => n.toLocaleString('es-PY');
-
-  // Calcular métricas
-  const totalVentas = new Set(detalles.map(d => d.venta_id)).size;
-  const montoTotal = detalles.reduce((sum, d) => sum + parseFloat(d.subtotal || '0'), 0);
-
-  // Card 2: combustible más utilizado (por cantidad)
-  let topProductoNombre = 'N/A';
-  let topProductoCantidad = 0;
-  {
-    const acumulado = new Map<string, number>();
-    for (const d of detalles) {
-      const key = d.nombre_producto || d.codigo_producto || 'Desconocido';
-      const cant = isNaN(parseFloat(d.cantidad || '0')) ? 0 : parseFloat(d.cantidad || '0');
-      acumulado.set(key, (acumulado.get(key) || 0) + cant);
-    }
-    Array.from(acumulado.entries()).forEach(([k, v]) => {
-      if (v > topProductoCantidad) {
-        topProductoCantidad = v;
-        topProductoNombre = k;
-      }
-    });
-  }
-
-  // Card 4: Carga promedio (promedio de suma de cantidades por venta)
-  let cargaPromedio = 0;
-  if (totalVentas > 0) {
-    const porVenta = new Map<number, number>();
-
-    for (const d of detalles) {
-      const cant = isNaN(parseFloat(d.subtotal || '0')) ? 0 : parseFloat(d.subtotal || '0');
-      porVenta.set(d.venta_id, (porVenta.get(d.venta_id) || 0) + cant);
-    }
-    const totalCarga = Array.from(porVenta.values()).reduce((a, b) => a + b, 0);
-    cargaPromedio = totalCarga / porVenta.size;
-  }
 
   // Aplicar filtros y ordenamiento
   const filteredDetalles = detalles
@@ -281,6 +262,40 @@ const VentasDetalle: React.FC = () => {
 
       return ordenDireccion === 'asc' ? comparison : -comparison;
     });
+
+  // Calcular métricas DINÁMICAS basadas en filteredDetalles
+  const totalVentas = new Set(filteredDetalles.map(d => d.venta_id)).size;
+  const montoTotal = filteredDetalles.reduce((sum, d) => sum + parseFloat(d.subtotal || '0'), 0);
+
+  // Card 2: combustible más utilizado (por cantidad) - de datos filtrados
+  let topProductoNombre = 'N/A';
+  let topProductoCantidad = 0;
+  {
+    const acumulado = new Map<string, number>();
+    for (const d of filteredDetalles) {
+      const key = d.nombre_producto || d.codigo_producto || 'Desconocido';
+      const cant = isNaN(parseFloat(d.cantidad || '0')) ? 0 : parseFloat(d.cantidad || '0');
+      acumulado.set(key, (acumulado.get(key) || 0) + cant);
+    }
+    Array.from(acumulado.entries()).forEach(([k, v]) => {
+      if (v > topProductoCantidad) {
+        topProductoCantidad = v;
+        topProductoNombre = k;
+      }
+    });
+  }
+
+  // Card 4: Carga promedio (promedio de suma de cantidades por venta) - de datos filtrados
+  let cargaPromedio = 0;
+  if (totalVentas > 0) {
+    const porVenta = new Map<number, number>();
+    for (const d of filteredDetalles) {
+      const cant = isNaN(parseFloat(d.subtotal || '0')) ? 0 : parseFloat(d.subtotal || '0');
+      porVenta.set(d.venta_id, (porVenta.get(d.venta_id) || 0) + cant);
+    }
+    const totalCarga = Array.from(porVenta.values()).reduce((a, b) => a + b, 0);
+    cargaPromedio = totalCarga / porVenta.size;
+  }
 
   // Paginación
   const totalPaginas = Math.ceil(filteredDetalles.length / itemsPorPagina);
