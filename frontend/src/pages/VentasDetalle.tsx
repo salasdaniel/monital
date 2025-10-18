@@ -70,7 +70,7 @@ const VentasDetalle: React.FC = () => {
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [empresaId, setEmpresaId] = useState<string>("todos");
+  const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [fechaDesde, setFechaDesde] = useState<string>('');
   const [fechaHasta, setFechaHasta] = useState<string>('');
@@ -79,15 +79,24 @@ const VentasDetalle: React.FC = () => {
     // Obtener datos del usuario desde localStorage
     const userData = getUser();
     setUser(userData);
+    setEmpresaId(userData.empresa_id);
   }, []);
 
   useEffect(() => {
-    fetchDetalles();
+    // Solo ejecutar fetchDetalles si empresaId ya está inicializado
+    if (empresaId !== null) {
+      fetchDetalles();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId]);
 
-  // Cargar empresas para el combobox
+  // Cargar empresas para el combobox (solo si el rol NO es 'user')
   useEffect(() => {
+    // Si el rol es 'user', no necesitamos cargar la lista de empresas
+    if (user?.role === 'user') {
+      return;
+    }
+
     const fetchEmpresas = async () => {
       try {
         const token = localStorage.getItem('access_token');
@@ -108,7 +117,7 @@ const VentasDetalle: React.FC = () => {
       }
     };
     fetchEmpresas();
-  }, []);
+  }, [user]);
 
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
@@ -116,10 +125,13 @@ const VentasDetalle: React.FC = () => {
   }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, empresaId, fechaDesde, fechaHasta]);
 
   const fetchDetalles = async () => {
+
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      const url = (empresaId && empresaId !== "todos") ? `${API_URLS.VENTAS_DETALLE}?empresa_id=${empresaId}` : API_URLS.VENTAS_DETALLE;
+      const role = user?.role;
+      const url = (role === 'user') ? `${API_URLS.VENTAS_DETALLE}?empresa_id=${empresaId}` : API_URLS.VENTAS_DETALLE;
+  
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -149,7 +161,7 @@ const VentasDetalle: React.FC = () => {
     if (!dateString) return 'N/A';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('es-PE', {
+      return date.toLocaleDateString('es-PY', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -177,7 +189,6 @@ const VentasDetalle: React.FC = () => {
 
   // Calcular métricas
   const totalVentas = new Set(detalles.map(d => d.venta_id)).size;
-  const totalProductos = detalles.length;
   const montoTotal = detalles.reduce((sum, d) => sum + parseFloat(d.subtotal || '0'), 0);
 
   // Card 2: combustible más utilizado (por cantidad)
@@ -395,68 +406,71 @@ const VentasDetalle: React.FC = () => {
                         className="w-[300px]"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
-                      <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="minimal"
-                            size="sm"
-                            role="combobox"
-                            aria-expanded={openCombobox}
-                            className="w-[240px] justify-between"
-                          >
-                            {empresaId === "todos"
-                              ? "Todas las empresas"
-                              : empresas.find((e) => String(e.id) === empresaId)?.nombre_comercial || "Seleccionar..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[240px] p-0">
-                          <Command>
-                            <CommandInput placeholder="Buscar empresa..." />
-                            <CommandList>
-                              <CommandEmpty>No se encontró empresa.</CommandEmpty>
-                              <CommandGroup>
-                                <CommandItem
-                                  value="todos"
-                                  onSelect={() => {
-                                    setEmpresaId("todos");
-                                    setOpenCombobox(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      empresaId === "todos" ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  Todas las empresas
-                                </CommandItem>
-                                {empresas.map((empresa) => (
+                    {/* Ocultar combobox de empresas si el rol es 'user' */}
+                    {user?.role !== 'user' && (
+                      <div className="flex flex-col">
+                        <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
+                        <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="minimal"
+                              size="sm"
+                              role="combobox"
+                              aria-expanded={openCombobox}
+                              className="w-[240px] justify-between"
+                            >
+                              {user?.role === 'admin'
+                                ? "Todas las empresas"
+                                : empresas.find((e) => e.id === empresaId)?.nombre_comercial || "Seleccionar..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[240px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar empresa..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró empresa.</CommandEmpty>
+                                <CommandGroup>
                                   <CommandItem
-                                    key={empresa.id}
-                                    value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                    value="todos"
                                     onSelect={() => {
-                                      setEmpresaId(String(empresa.id));
+                                      setEmpresaId(0);
                                       setOpenCombobox(false);
                                     }}
                                   >
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        empresaId === String(empresa.id) ? "opacity-100" : "opacity-0"
+                                        empresaId === 0 ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    {empresa.nombre_comercial} ({empresa.ruc})
+                                    Todas las empresas
                                   </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                                  {empresas.map((empresa) => (
+                                    <CommandItem
+                                      key={empresa.id}
+                                      value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                      onSelect={() => {
+                                        setEmpresaId(empresa.id);
+                                        setOpenCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          empresaId === empresa.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {empresa.nombre_comercial} ({empresa.ruc})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Fecha desde</Label>
                       <Input
