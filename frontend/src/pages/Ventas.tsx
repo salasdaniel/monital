@@ -78,22 +78,49 @@ const Ventas: React.FC = () => {
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
 
+  const [empresaId, setEmpresaId] = useState<number | null>(null);
+
   useEffect(() => {
     const userData = getUser();
     setUser(userData);
-    fetchVentas();
+
+    if (userData.role === 'user') {
+      setEmpresaId(userData.empresa_id);
+    } else {
+      setEmpresaId(0); // Admin ve todas las empresas por defecto
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Solo ejecutar fetchVentas si empresaId ya está inicializado
+    if (empresaId !== null) {
+      fetchVentas();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId]);
 
   useEffect(() => {
     setPaginaActual(1);
   }, [searchTerm, empresaFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
 
   const fetchVentas = async () => {
+
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(API_URLS.VENTAS, {
+      const role = user?.role;
+
+      
+      let url = API_URLS.VENTAS;
+      // console.log('url enviada', url, 'empresaId', empresaId, 'role', role);
+      if (role === 'user') {
+        url = `${API_URLS.VENTAS}?empresa_id=${empresaId}`;
+      } else if (empresaId && empresaId > 0) {
+        url = `${API_URLS.VENTAS}?empresa_id=${empresaId}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,20 +165,20 @@ const Ventas: React.FC = () => {
   // Filtrar y ordenar ventas
   const ventasFiltradas = ventas.filter((venta) => {
     const searchLower = searchTerm.toLowerCase();
-    const matchSearch = !searchTerm || 
+    const matchSearch = !searchTerm ||
       venta.ticket?.toLowerCase().includes(searchLower) ||
       venta.nombre_cliente?.toLowerCase().includes(searchLower) ||
       venta.ruc_cliente?.toLowerCase().includes(searchLower) ||
       venta.matricula?.toLowerCase().includes(searchLower) ||
       venta.nombre_chofer?.toLowerCase().includes(searchLower);
 
-    const matchEmpresa = empresaFiltro === 'todos' || 
+    const matchEmpresa = empresaFiltro === 'todos' ||
       venta.empresa_id?.toString() === empresaFiltro;
 
     return matchSearch && matchEmpresa;
   }).sort((a, b) => {
     let comparison = 0;
-    
+
     switch (ordenarPor) {
       case 'fecha':
         comparison = new Date(a.fecha || 0).getTime() - new Date(b.fecha || 0).getTime();
@@ -326,22 +353,27 @@ const Ventas: React.FC = () => {
                         className="w-[200px]"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
-                      <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
-                        <SelectTrigger variant="minimal" size="sm" className="w-[180px]">
-                          <SelectValue placeholder="Empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todas las empresas</SelectItem>
-                          {empresasParaFiltro.map((empresa) => (
-                            <SelectItem key={empresa.id} value={empresa.id!.toString()}>
-                              {empresa.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+
+
+                    {user?.role !== 'user' && (
+                      <div className="flex flex-col">
+                        <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
+                        <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
+                          <SelectTrigger variant="minimal" size="sm" className="w-[180px]">
+                            <SelectValue placeholder="Empresa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todos">Todas las empresas</SelectItem>
+                            {empresasParaFiltro.map((empresa) => (
+                              <SelectItem key={empresa.id} value={empresa.id!.toString()}>
+                                {empresa.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Ordenar por</Label>
                       <Select value={ordenarPor} onValueChange={setOrdenarPor}>
@@ -388,10 +420,10 @@ const Ventas: React.FC = () => {
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">ID</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Ticket</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha</th>
-                     
+
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Empresa</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Chofer</th>
-               
+
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Matrícula</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Kilometraje</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Estación</th>
@@ -407,7 +439,7 @@ const Ventas: React.FC = () => {
                               <span className="font-medium ">{venta.identificador_tr || 'N/A'}</span>
                             </td>
 
-                             <td className="px-3 py-2 text-center text-gray-700">
+                            <td className="px-3 py-2 text-center text-gray-700">
                               <span className="font-medium ">{venta.ticket || 'N/A'}</span>
                             </td>
 
@@ -424,7 +456,7 @@ const Ventas: React.FC = () => {
                                 <span className="text-xs text-gray-500">RUC: {venta.ruc_cliente || ''}</span>
                               </div>
                             </td>
-                            
+
                             <td className="px-3 py-1 text-left text-gray-700">
                               <div className="flex flex-col">
                                 <span className="font-medium">{venta.nombre_chofer || 'N/A'}</span>
@@ -432,14 +464,14 @@ const Ventas: React.FC = () => {
                               </div>
                             </td>
 
-                            
+
                             <td className="px-3 py-1 text-center text-gray-700">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
                                 {venta.matricula || 'N/A'}
                               </span>
                             </td>
 
-                             <td className="px-3 py-2 text-center text-gray-700">
+                            <td className="px-3 py-2 text-center text-gray-700">
                               <span className="font-medium">
                                 {venta.kilometraje ? venta.kilometraje.toLocaleString('es-PY', { maximumFractionDigits: 0 }) : '0'} km.
                               </span>
@@ -454,13 +486,13 @@ const Ventas: React.FC = () => {
 
 
 
-    
+
                             <td className="px-3 py-1 text-center text-gray-700 font-semibold">
                               {formatCurrency(venta.total)}
                             </td>
                             <td className="px-3 py-1 text-center">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
-                                {venta.lineas.length }
+                                {venta.lineas.length}
                               </span>
                             </td>
 
