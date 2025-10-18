@@ -192,7 +192,7 @@ const Ventas: React.FC = () => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('es-PE', {
+      return date.toLocaleDateString('es-PY', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -205,9 +205,13 @@ const Ventas: React.FC = () => {
   };
 
   const formatCurrency = (value: string | null) => {
-    if (!value) return 'S/ 0.00';
-    const num = parseFloat(value);
-    return `S/ ${num.toFixed(2)}`;
+    if (!value) return 'Gs. 0';
+    try {
+      const num = parseFloat(value);
+      return num.toLocaleString('es-PY', { style: 'currency', currency: 'PYG', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    } catch {
+      return 'Gs. 0';
+    }
   };
 
   if (loading) {
@@ -273,7 +277,7 @@ const Ventas: React.FC = () => {
                     <DollarSign className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {formatCurrency(totalMonto.toString())}
                     </div>
                     <p className="text-xs text-gray-500">Suma de todas las ventas</p>
@@ -286,7 +290,7 @@ const Ventas: React.FC = () => {
                     <TrendingUp className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-blue-600">
                       {empresasUnicas}
                     </div>
                     <p className="text-xs text-gray-500">Empresas únicas</p>
@@ -299,8 +303,8 @@ const Ventas: React.FC = () => {
                     <Package className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-500">
-                      {productosVendidos.toFixed(2)}
+                    <div className="text-2xl font-bold text-blue-600">
+                      {productosVendidos}
                     </div>
                     <p className="text-xs text-gray-500">Unidades vendidas</p>
                   </CardContent>
@@ -381,11 +385,15 @@ const Ventas: React.FC = () => {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-200">
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">ID</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Ticket</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Cliente</th>
+                     
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Empresa</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Chofer</th>
+               
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Matrícula</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Kilometraje</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Estación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Total</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Items</th>
@@ -394,32 +402,68 @@ const Ventas: React.FC = () => {
                       <tbody>
                         {ventasPaginadas.map((venta) => (
                           <tr key={venta.id} className="">
-                            <td className="px-3 py-1 text-center text-gray-700">
-                              {venta.ticket || '-'}
+
+                            <td className="px-3 py-2 text-center text-gray-700">
+                              <span className="font-medium ">{venta.identificador_tr || 'N/A'}</span>
                             </td>
+
+                             <td className="px-3 py-2 text-center text-gray-700">
+                              <span className="font-medium ">{venta.ticket || 'N/A'}</span>
+                            </td>
+
+                            {/* <td className="px-3 py-1 text-center text-gray-700">
+                              {venta.ticket || '-'}
+                            </td> */}
                             <td className="px-3 py-1 text-center text-gray-700">
                               {formatDate(venta.fecha)}
                             </td>
-                            <td className="px-3 py-1 text-center text-gray-700">
-                              {venta.nombre_cliente || '-'}
+
+                            <td className="px-3 py-1 text-left text-gray-700">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{venta.nombre_cliente || 'N/A'}</span>
+                                <span className="text-xs text-gray-500">RUC: {venta.ruc_cliente || ''}</span>
+                              </div>
                             </td>
-                            <td className="px-3 py-1 text-center text-gray-700">
-                              {venta.empresa_nombre || '-'}
+                            
+                            <td className="px-3 py-1 text-left text-gray-700">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{venta.nombre_chofer || 'N/A'}</span>
+                                <span className="text-xs text-gray-500">CI: {venta.documento_chofer || ''}</span>
+                              </div>
                             </td>
+
+                            
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {venta.matricula || '-'}
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
+                                {venta.matricula || 'N/A'}
+                              </span>
                             </td>
-                            <td className="px-3 py-1 text-center text-gray-700">
-                              {venta.nombre_estacion || '-'}
+
+                             <td className="px-3 py-2 text-center text-gray-700">
+                              <span className="font-medium">
+                                {venta.kilometraje ? venta.kilometraje.toLocaleString('es-PY', { maximumFractionDigits: 0 }) : '0'} km.
+                              </span>
                             </td>
+
+                            <td className="px-3 py-1 text-left text-gray-700">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{venta.nombre_estacion || 'N/A'}</span>
+                                <span className="text-xs text-gray-500">COD: {venta.codigo_estacion || ''}</span>
+                              </div>
+                            </td>
+
+
+
+    
                             <td className="px-3 py-1 text-center text-gray-700 font-semibold">
                               {formatCurrency(venta.total)}
                             </td>
                             <td className="px-3 py-1 text-center">
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                {venta.lineas.length}
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
+                                {venta.lineas.length }
                               </span>
                             </td>
+
                           </tr>
                         ))}
                       </tbody>

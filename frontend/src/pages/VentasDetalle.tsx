@@ -601,7 +601,7 @@ const VentasDetalle: React.FC = () => {
                             </td>
                             <td className="px-3 py-2 text-center text-gray-700">
                               {(detalle.cantidad && !isNaN(parseFloat(detalle.cantidad)))
-                                ? parseFloat(detalle.cantidad).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                ? parseFloat(detalle.cantidad).toLocaleString('es-PY', { maximumFractionDigits: 0 })
                                 : '0.00'}
                             </td>
                             <td className="px-3 py-2 text-right text-gray-700">
