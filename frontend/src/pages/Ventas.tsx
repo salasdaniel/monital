@@ -5,13 +5,16 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
 import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, DollarSign, TrendingUp, Package } from "lucide-react";
+import { ShoppingCart, DollarSign, TrendingUp, Package, Check, ChevronsUpDown } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
+import { cn } from "../lib/utils";
 
 // Interfaces basadas en la API de ventas
 interface VentaLinea {
@@ -60,6 +63,13 @@ interface ApiResponse {
 interface UserData {
   username: string;
   role?: string;
+  empresa_id?: number;
+}
+
+interface Empresa {
+  id: number;
+  nombre_comercial: string;
+  ruc: string;
 }
 
 const Ventas: React.FC = () => {
@@ -72,13 +82,20 @@ const Ventas: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Estados para filtros y paginación
-  const [empresaFiltro, setEmpresaFiltro] = useState<string>('todos');
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
   const [ordenDireccion, setOrdenDireccion] = useState<'asc' | 'desc'>('desc');
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
 
   const [empresaId, setEmpresaId] = useState<number | null>(null);
+  
+  // Estados para combobox de empresas
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [openCombobox, setOpenCombobox] = useState(false);
+  
+  // Estados para filtros de fecha
+  const [fechaDesde, setFechaDesde] = useState<string>('');
+  const [fechaHasta, setFechaHasta] = useState<string>('');
 
   useEffect(() => {
     const userData = getUser();
@@ -92,6 +109,34 @@ const Ventas: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cargar empresas para el combobox (solo si el rol NO es 'user')
+  useEffect(() => {
+    if (user?.role === 'user') {
+      return;
+    }
+
+    const fetchEmpresas = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(API_URLS.EMPRESAS, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-App-Key': APP_KEY
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}`);
+        }
+        const data = await response.json();
+        setEmpresas(data.empresas || []);
+      } catch (_) {
+        // swallow error en UI de solo lectura
+      }
+    };
+    fetchEmpresas();
+  }, [user]);
+
   useEffect(() => {
     // Solo ejecutar fetchVentas si empresaId ya está inicializado
     if (empresaId !== null) {
@@ -102,7 +147,7 @@ const Ventas: React.FC = () => {
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [searchTerm, empresaFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
+  }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, fechaDesde, fechaHasta]);
 
   const fetchVentas = async () => {
 
@@ -150,18 +195,6 @@ const Ventas: React.FC = () => {
     }
   };
 
-  // Calcular métricas para los cards
-  const totalVentas = ventas.length;
-  const totalMonto = ventas.reduce((sum, venta) => {
-    return sum + (venta.total ? parseFloat(venta.total) : 0);
-  }, 0);
-  const empresasUnicas = new Set(ventas.map(v => v.empresa_ruc).filter(Boolean)).size;
-  const productosVendidos = ventas.reduce((sum, venta) => {
-    return sum + venta.lineas.reduce((lineSum, linea) => {
-      return lineSum + (linea.cantidad ? parseFloat(linea.cantidad) : 0);
-    }, 0);
-  }, 0);
-
   // Filtrar y ordenar ventas
   const ventasFiltradas = ventas.filter((venta) => {
     const searchLower = searchTerm.toLowerCase();
@@ -172,10 +205,12 @@ const Ventas: React.FC = () => {
       venta.matricula?.toLowerCase().includes(searchLower) ||
       venta.nombre_chofer?.toLowerCase().includes(searchLower);
 
-    const matchEmpresa = empresaFiltro === 'todos' ||
-      venta.empresa_id?.toString() === empresaFiltro;
+    // Filtro de fechas
+    const ventaFecha = venta.fecha ? new Date(venta.fecha) : null;
+    const matchFechaDesde = !fechaDesde || !ventaFecha || ventaFecha >= new Date(fechaDesde + ' 00:00:00');
+    const matchFechaHasta = !fechaHasta || !ventaFecha || ventaFecha <= new Date(fechaHasta + ' 23:59:59');
 
-    return matchSearch && matchEmpresa;
+    return matchSearch && matchFechaDesde && matchFechaHasta;
   }).sort((a, b) => {
     let comparison = 0;
 
@@ -199,20 +234,23 @@ const Ventas: React.FC = () => {
     return ordenDireccion === 'asc' ? comparison : -comparison;
   });
 
+  // Calcular métricas DINÁMICAS basadas en ventasFiltradas
+  const totalVentas = ventasFiltradas.length;
+  const totalMonto = ventasFiltradas.reduce((sum, venta) => {
+    return sum + (venta.total ? parseFloat(venta.total) : 0);
+  }, 0);
+  const empresasUnicas = new Set(ventasFiltradas.map(v => v.empresa_ruc).filter(Boolean)).size;
+  const productosVendidos = ventasFiltradas.reduce((sum, venta) => {
+    return sum + venta.lineas.reduce((lineSum, linea) => {
+      return lineSum + (linea.cantidad ? parseFloat(linea.cantidad) : 0);
+    }, 0);
+  }, 0);
+
   // Paginación
   const totalPaginas = Math.ceil(ventasFiltradas.length / itemsPorPagina);
   const ventasPaginadas = ventasFiltradas.slice(
     (paginaActual - 1) * itemsPorPagina,
     paginaActual * itemsPorPagina
-  );
-
-  // Obtener empresas únicas para el filtro
-  const empresasParaFiltro = Array.from(
-    new Map(
-      ventas
-        .filter(v => v.empresa_id && v.empresa_nombre)
-        .map(v => [v.empresa_id, { id: v.empresa_id, nombre: v.empresa_nombre }])
-    ).values()
   );
 
   const formatDate = (dateString: string | null) => {
@@ -345,34 +383,106 @@ const Ventas: React.FC = () => {
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Buscar</Label>
                       <Input
-                        placeholder="Ticket, cliente, matrícula..."
+                        placeholder="Ticket, cliente, matrícula, chofer..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         variant="minimal"
                         fieldSize="sm"
-                        className="w-[200px]"
+                        className="w-[300px]"
                       />
                     </div>
 
-
+                    {/* Combobox de Empresas (solo para admin) */}
                     {user?.role !== 'user' && (
                       <div className="flex flex-col">
                         <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
-                        <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
-                          <SelectTrigger variant="minimal" size="sm" className="w-[180px]">
-                            <SelectValue placeholder="Empresa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todas las empresas</SelectItem>
-                            {empresasParaFiltro.map((empresa) => (
-                              <SelectItem key={empresa.id} value={empresa.id!.toString()}>
-                                {empresa.nombre}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="minimal"
+                              role="combobox"
+                              aria-expanded={openCombobox}
+                              className="w-[240px] justify-between h-9"
+                            >
+                              {empresaId === 0
+                                ? "Todas las empresas"
+                                : empresas.find((empresa) => empresa.id === empresaId)?.nombre_comercial || "Seleccionar empresa..."
+                              }
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar empresa..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontraron empresas.</CommandEmpty>
+                                <CommandGroup>
+                                  <CommandItem
+                                    value="todas"
+                                    onSelect={() => {
+                                      setEmpresaId(0);
+                                      setOpenCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        empresaId === 0 ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    Todas las empresas
+                                  </CommandItem>
+                                  {empresas.map((empresa) => (
+                                    <CommandItem
+                                      key={empresa.id}
+                                      value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                      onSelect={() => {
+                                        setEmpresaId(empresa.id);
+                                        setOpenCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          empresaId === empresa.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {empresa.nombre_comercial} ({empresa.ruc})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     )}
+
+                    {/* Fecha Desde */}
+                    <div className="flex flex-col">
+                      <Label className="text-sm font-medium text-gray-700 mb-1">Fecha desde</Label>
+                      <Input
+                        type="date"
+                        value={fechaDesde}
+                        onChange={(e) => setFechaDesde(e.target.value)}
+                        variant="minimal"
+                        fieldSize="sm"
+                        className="w-[150px]"
+                      />
+                    </div>
+
+                    {/* Fecha Hasta */}
+                    <div className="flex flex-col">
+                      <Label className="text-sm font-medium text-gray-700 mb-1">Fecha hasta</Label>
+                      <Input
+                        type="date"
+                        value={fechaHasta}
+                        onChange={(e) => setFechaHasta(e.target.value)}
+                        variant="minimal"
+                        fieldSize="sm"
+                        className="w-[150px]"
+                      />
+                    </div>
 
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Ordenar por</Label>
