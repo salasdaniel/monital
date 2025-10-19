@@ -6,6 +6,7 @@ import Empresas from './pages/Empresas';
 import Users from './pages/Users';
 import Ventas from './pages/Ventas';
 import VentasDetalle from './pages/VentasDetalle';
+import Matriculas from './pages/Matriculas';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -51,6 +52,14 @@ function App() {
           element={
             <ProtectedRoute>
               <VentasDetalle />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/matriculas" 
+          element={
+            <ProtectedRoute>
+              <Matriculas />
             </ProtectedRoute>
           } 
         />

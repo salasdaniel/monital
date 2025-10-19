@@ -18,6 +18,9 @@ const API_CONFIG = {
     UPDATE_USERS: (id: string) => `/api/users/${id}/update/`,
     VENTAS: '/api/ventas/',
     VENTAS_DETALLE: '/api/ventas/detalle/',
+    MATRICULAS: '/api/matriculas/',
+    ADD_MATRICULAS: '/api/matriculas/add/',
+    UPDATE_MATRICULAS: (id: number) => `/api/matriculas/update/${id}/`,
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
@@ -43,6 +46,9 @@ export const API_URLS = {
   UPDATE_USERS: (id: string) => getApiUrl(API_CONFIG.ENDPOINTS.UPDATE_USERS(id)),
   VENTAS: getApiUrl(API_CONFIG.ENDPOINTS.VENTAS),
   VENTAS_DETALLE: getApiUrl(API_CONFIG.ENDPOINTS.VENTAS_DETALLE),
+  MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.MATRICULAS),
+  ADD_MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.ADD_MATRICULAS),
+  UPDATE_MATRICULAS: (id: number) => getApiUrl(API_CONFIG.ENDPOINTS.UPDATE_MATRICULAS(id)),
 };
 
 export const APP_KEY = API_CONFIG.APP_KEY;

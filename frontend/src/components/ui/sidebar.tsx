@@ -81,6 +81,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/ventas-detalle',
       roles: ['admin', 'user', 'moderator']
     },
+    {
+      id: 'matriculas',
+      label: 'Matriculas',
+      icon: <ChartColumnIncreasing className="h-5 w-5" />,
+      href: '/matriculas',
+      roles: ['admin', 'user', 'moderator']
+    },
   ];
 
   // Filtrar menús según el rol del usuario
