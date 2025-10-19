@@ -3,86 +3,44 @@ import { useLocation } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { Plus, Car, AlertCircle, X, Edit2 } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
-//combo box
-import { Check, ChevronsUpDown } from "lucide-react"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../components/ui/popover"
-
-// Interfaces basadas en la API de usuarios
-interface Usuario {
-  id: string;
-  email: string;
-  name: string;
-  last_name: string;
-  ruc: string;
-  username: string;
-  role: string;
+// Interfaces basadas en la API
+interface Matricula {
+  id: number;
+  nro_matricula: string;
+  tracker_id?: string;
   empresa_id?: number;
   empresa_nombre?: string;
-  activo: boolean;
   created_at: string;
+  updated_at: string;
+  usuario_creacion?: string;
 }
 
-interface UsuarioFormData {
-  email: string;
-  name: string;
-  last_name: string;
-  ruc: string;
-  username: string;
-  password: string;
-  role: string;
+interface MatriculaFormData {
+  nro_matricula: string;
+  tracker_id: string;
   empresa_id: string;
 }
 
 interface ApiResponse {
   message: string;
   count: number;
-  usuarios: Usuario[];
+  matriculas: Matricula[];
 }
 
 interface Empresa {
   id: number;
-  razon_social: string;
   nombre_comercial: string;
   ruc: string;
-  activo: boolean;
-}
-
-interface EmpresasApiResponse {
-  message: string;
-  count: number;
-  empresas: Empresa[];
 }
 
 interface UserData {
@@ -90,40 +48,29 @@ interface UserData {
   role?: string;
 }
 
-const Users: React.FC = () => {
+const Matriculas: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<UserData | null>(null);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
+  const [editingMatricula, setEditingMatricula] = useState<Matricula | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
   // Estados para filtros y paginación
-  const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
+  const [empresaFiltro, setEmpresaFiltro] = useState<string>('todos');
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
   const [ordenDireccion, setOrdenDireccion] = useState<'asc' | 'desc'>('desc');
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
 
-  // Estados para el AlertDialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [usuarioToDelete, setUsuarioToDelete] = useState<{ id: string; activo: boolean } | null>(null);
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [openEmpresaCombobox, setOpenEmpresaCombobox] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [formData, setFormData] = useState<UsuarioFormData>({
-    email: '',
-    name: '',
-    last_name: '',
-    ruc: '',
-    username: '',
-    password: '',
-    role: 'user',
+  const [formData, setFormData] = useState<MatriculaFormData>({
+    nro_matricula: '',
+    tracker_id: '',
     empresa_id: '',
   });
 
@@ -131,70 +78,17 @@ const Users: React.FC = () => {
     // Obtener datos del usuario desde localStorage
     const user = getUser();
     setUser(user);
-
   }, []);
 
   useEffect(() => {
-    fetchUsuarios();
-  }, []);
-
-  useEffect(() => {
+    fetchMatriculas();
     fetchEmpresas();
   }, []);
 
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [searchTerm, estadoFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
-
-  // Asignar automáticamente empresa ID 1 cuando el rol es admin
-  useEffect(() => {
-    if (formData.role === 'admin') {
-      setFormData(prev => ({ ...prev, empresa_id: '1' }));
-    }
-  }, [formData.role]);
-
-  // Función para generar contraseña aleatoria
-  const generatePassword = (length: number = 8): string => {
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*';
-    let password = '';
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      password += charset[randomIndex];
-    }
-    return password;
-  };
-
-
-  const fetchUsuarios = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(API_URLS.USERS, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'X-App-Key': APP_KEY
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
-
-      const data: ApiResponse = await response.json();
-      setUsuarios(data.usuarios || []);
-      setError(null);
-      // console.log(data)
-    } catch (err) {
-      // console.error('Error al obtener usuarios:', err);
-      setError(err instanceof Error ? err.message : 'Error al cargar los usuarios');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [searchTerm, empresaFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
 
   const fetchEmpresas = async () => {
     try {
@@ -212,46 +106,61 @@ const Users: React.FC = () => {
         throw new Error(`Error ${response.status}`);
       }
 
-      const data: EmpresasApiResponse = await response.json();
-      // Filtrar solo empresas activas
-      const empresasActivas = data.empresas?.filter(e => e.activo) || [];
-      setEmpresas(empresasActivas);
+      const data = await response.json();
+      setEmpresas(data.empresas || []);
     } catch (err) {
       console.error('Error al obtener empresas:', err);
-      // No mostramos toast de error porque no es crítico
     }
   };
 
-
-  // Función para crear un nuevo usuario
-  const createUsuario = async () => {
-    // Validar longitud de contraseña
-    if (formData.password.length < 6) {
-      toast({
-        title: "Error de validación",
-        description: "La contraseña debe tener al menos 6 caracteres",
-        variant: "destructive",
+  const fetchMatriculas = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(API_URLS.MATRICULAS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-App-Key': APP_KEY
+        }
       });
-      return;
-    }
 
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      setMatriculas(data.matriculas || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar las matrículas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para crear una nueva matrícula
+  const createMatricula = async () => {
     try {
       setFormLoading(true);
       const token = localStorage.getItem('access_token');
 
-      // Construir el payload con los campos requeridos
-      const payload = {
-        email: formData.email,
-        name: formData.name,
-        last_name: formData.last_name,
-        ruc: formData.ruc,
-        username: formData.username,
-        password: formData.password,
-        role: formData.role,
-        empresa_id: formData.empresa_id ? parseInt(formData.empresa_id) : null,
+      // Construir payload solo con campos que tienen valor
+      const payload: any = {
+        nro_matricula: formData.nro_matricula,
       };
+      
+      if (formData.tracker_id) {
+        payload.tracker_id = formData.tracker_id;
+      }
+      
+      if (formData.empresa_id) {
+        payload.empresa_id = parseInt(formData.empresa_id);
+      }
 
-      const response = await fetch(API_URLS.ADD_USERS, {
+      const response = await fetch(API_URLS.ADD_MATRICULAS, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -262,20 +171,17 @@ const Users: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
-      // const result = await response.json();
-      // console.log('Usuario creado:', result);
-
-      // Actualizar la lista de usuarios
-      await fetchUsuarios();
+      // Actualizar la lista de matrículas
+      await fetchMatriculas();
 
       // Mostrar toast de éxito
       toast({
-        title: "¡Usuario creado exitosamente!",
-        description: `${formData.name} ${formData.last_name} ha sido agregado al sistema.`,
+        title: "¡Matrícula creada exitosamente!",
+        description: `${formData.nro_matricula} ha sido agregada al sistema.`,
         variant: "success",
       });
 
@@ -284,46 +190,28 @@ const Users: React.FC = () => {
       setIsCreateModalOpen(false);
       setError(null);
     } catch (err) {
-      // console.error('Error al crear empresa:', err);
-      setError(err instanceof Error ? err.message : 'Error al crear la empresa');
+      setError(err instanceof Error ? err.message : 'Error al crear la matrícula');
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Error al crear la matrícula',
+        variant: "destructive",
+      });
     } finally {
       setFormLoading(false);
     }
   };
 
-  const updateUsuario = async (id: string) => {
-    // Validar longitud de contraseña si se está cambiando
-    if (formData.password && formData.password.length < 6) {
-      toast({
-        title: "Error de validación",
-        description: "La contraseña debe tener al menos 6 caracteres",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  // Función para actualizar una matrícula (solo tracker_id)
+  const updateMatricula = async (id: number) => {
     try {
-
       setFormLoading(true);
       const token = localStorage.getItem('access_token');
 
-      // Construir el payload - password es opcional en update
-      const payload: any = {
-        email: formData.email,
-        name: formData.name,
-        last_name: formData.last_name,
-        ruc: formData.ruc,
-        username: formData.username,
-        role: formData.role,
-        empresa_id: formData.empresa_id ? parseInt(formData.empresa_id) : null,
+      const payload = {
+        tracker_id: formData.tracker_id || null,
       };
 
-      // Solo agregar password si se proporcionó uno nuevo
-      if (formData.password) {
-        payload.password = formData.password;
-      }
-
-      const response = await fetch(API_URLS.UPDATE_USERS(id), {
+      const response = await fetch(API_URLS.UPDATE_MATRICULAS(id), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -334,22 +222,17 @@ const Users: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
-      // console.log(response)
-
-      // const result = await response.json();
-      // console.log('Usuario actualizado:', result);
-
-      // Actualizar la lista de usuarios
-      await fetchUsuarios();
+      // Actualizar la lista de matrículas
+      await fetchMatriculas();
 
       // Mostrar toast de éxito
       toast({
-        title: "¡Usuario actualizado exitosamente!",
-        description: `${formData.name} ${formData.last_name} ha sido actualizado`,
+        title: "¡Matrícula actualizada exitosamente!",
+        description: `El tracker_id de ${formData.nro_matricula} ha sido actualizado.`,
         variant: "success",
       });
 
@@ -358,121 +241,62 @@ const Users: React.FC = () => {
       setIsCreateModalOpen(false);
       setError(null);
     } catch (err) {
-      // console.error('Error al actualizar usuario:', err);
-      setError(err instanceof Error ? err.message : 'Error al actualizar el usuario');
-    }
-  };
-
-  // Función para abrir el dialog de confirmación
-  const openDeleteDialog = (id: string, activo: boolean) => {
-    setUsuarioToDelete({ id, activo });
-    setDeleteDialogOpen(true);
-  };
-
-  //funcion para desactivar un usuario (ejecuta después de confirmar)
-  const handleDelete = async (id: string, activo: boolean) => {
-    try {
-
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(API_URLS.DEACTIVATE_USERS(id), {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'X-App-Key': APP_KEY
-        },
-        body: JSON.stringify({ activo })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
-
-      // const result = await response.json();
-      // console.log('Estado de usuario cambiado:', result);
-
+      setError(err instanceof Error ? err.message : 'Error al actualizar la matrícula');
       toast({
-        title: activo ? "¡Usuario desactivado exitosamente!" : "¡Usuario activado exitosamente!",
-        variant: "success",
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Error al actualizar la matrícula',
+        variant: "destructive",
       });
-
-      setError(null);
-      await fetchUsuarios();
-
-    } catch (err) {
-
-      // console.error('Error al cambiar estado de usuario:', err);
-      setError(err instanceof Error ? err.message : 'Error al cambiar el estado del usuario');
-
     } finally {
-      setDeleteDialogOpen(false);
-      setUsuarioToDelete(null);
+      setFormLoading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUsuario) {
-      await updateUsuario(editingUsuario.id)
-      // console.log('Actualizando usuario:', editingUsuario.id);
+    if (editingMatricula) {
+      await updateMatricula(editingMatricula.id);
     } else {
-      await createUsuario();
+      await createMatricula();
     }
   };
 
-
-
   const resetForm = () => {
     setFormData({
-      email: '',
-      name: '',
-      last_name: '',
-      ruc: '',
-      username: '',
-      password: generatePassword(8), // Generar contraseña automática
-      role: 'user',
+      nro_matricula: '',
+      tracker_id: '',
       empresa_id: '',
     });
-    setEditingUsuario(null);
+    setEditingMatricula(null);
     setError(null);
-    setShowPassword(false); // Resetear visibilidad de contraseña
   };
 
-  // Función para manejar la edición
-  const handleEdit = (usuario: Usuario) => {
-    setEditingUsuario(usuario);
+  // Función para manejar la edición (solo tracker_id)
+  const handleEdit = (matricula: Matricula) => {
+    setEditingMatricula(matricula);
     setFormData({
-      email: usuario.email,
-      name: usuario.name,
-      last_name: usuario.last_name,
-      ruc: usuario.ruc,
-      username: usuario.username,
-      password: '', // Dejar vacío para no cambiar la contraseña
-      role: usuario.role,
-      empresa_id: usuario.empresa_id?.toString() || '',
+      nro_matricula: matricula.nro_matricula,
+      tracker_id: matricula.tracker_id || '',
+      empresa_id: matricula.empresa_id?.toString() || '',
     });
     setIsCreateModalOpen(true);
   };
 
   // Lógica de filtrado, ordenamiento y paginación
-  const filteredUsuarios = usuarios
-    .filter(usuario => {
+  const filteredMatriculas = matriculas
+    .filter(matricula => {
       // Filtro por búsqueda
       const matchesSearch =
-        usuario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.ruc.includes(searchTerm);
+        matricula.nro_matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (matricula.tracker_id && matricula.tracker_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (matricula.empresa_nombre && matricula.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Filtro por estado
-      const matchesEstado =
-        estadoFiltro === 'todos' ? true :
-          estadoFiltro === 'activo' ? usuario.activo :
-            !usuario.activo;
+      // Filtro por empresa
+      const matchesEmpresa =
+        empresaFiltro === 'todos' ? true :
+          matricula.empresa_id?.toString() === empresaFiltro;
 
-      return matchesSearch && matchesEstado;
+      return matchesSearch && matchesEmpresa;
     })
     .sort((a, b) => {
       // Ordenamiento
@@ -482,11 +306,11 @@ const Users: React.FC = () => {
         case 'fecha':
           comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
           break;
-        case 'nombre':
-          comparison = `${a.name} ${a.last_name}`.localeCompare(`${b.name} ${b.last_name}`);
+        case 'matricula':
+          comparison = a.nro_matricula.localeCompare(b.nro_matricula);
           break;
-        case 'ruc':
-          comparison = a.ruc.localeCompare(b.ruc);
+        case 'empresa':
+          comparison = (a.empresa_nombre || '').localeCompare(b.empresa_nombre || '');
           break;
         default:
           comparison = 0;
@@ -496,8 +320,8 @@ const Users: React.FC = () => {
     });
 
   // Paginación
-  const totalPaginas = Math.ceil(filteredUsuarios.length / itemsPorPagina);
-  const usuariosPaginados = filteredUsuarios.slice(
+  const totalPaginas = Math.ceil(filteredMatriculas.length / itemsPorPagina);
+  const matriculasPaginadas = filteredMatriculas.slice(
     (paginaActual - 1) * itemsPorPagina,
     paginaActual * itemsPorPagina
   );
@@ -508,12 +332,11 @@ const Users: React.FC = () => {
         <Sidebar
           userRole={user?.role ?? 'user'}
           currentPath={location.pathname}
-
         />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-lg text-gray-600">Cargando empresas...</p>
+            <p className="mt-4 text-lg text-gray-600">Cargando matrículas...</p>
           </div>
         </div>
       </div>
@@ -523,23 +346,18 @@ const Users: React.FC = () => {
   return (
     <>
       <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
         <Sidebar
           userRole={user?.role ?? 'user'}
           currentPath={location.pathname}
-
         />
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          <Header title="Empresas" subtitle="Gestión de empresas del sistema" />
-          {/* Error general */}
+          <Header title="Matrículas" subtitle="Gestión de matrículas de vehículos" />
 
-          {error && !isCreateModalOpen && (
+          {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4 m-4">
               <div className="flex">
                 <div className="ml-3">
-
                   <div className="mt-2 text-sm text-red-700">
                     {error}
                   </div>
@@ -548,97 +366,36 @@ const Users: React.FC = () => {
             </div>
           )}
 
-          {/* Main Content Area */}
           <main className="flex-1 p-6">
             <div className="flex flex-col gap-6">
-              {/* Tarjetas de métricas - Exactamente como en la imagen */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border border-gray-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Total Usuarios</CardTitle>
-                    <UsersIcon className="h-4 w-4 text-gray-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {usuarios.length}
-                    </div>
-                    <p className="text-xs text-gray-500">Total registrados</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-gray-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Usuarios Activos</CardTitle>
-                    <UsersIcon className="h-4 w-4 text-gray-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {usuarios.filter(u => u.activo).length}
-                    </div>
-                    <p className="text-xs text-gray-500">Usuarios activos</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-gray-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Usuarios Inactivos</CardTitle>
-                    <UsersIcon className="h-4 w-4 text-gray-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {usuarios.filter(u => !u.activo).length}
-                    </div>
-                    <p className="text-xs text-gray-500">Usuarios inactivos</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-gray-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Nuevos este Mes</CardTitle>
-                    <UsersIcon className="h-4 w-4 text-gray-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {usuarios.filter(u => {
-                        const createdDate = new Date(u.created_at);
-                        const currentDate = new Date();
-                        return createdDate.getMonth() === currentDate.getMonth() &&
-                          createdDate.getFullYear() === currentDate.getFullYear();
-                      }).length}
-                    </div>
-                    <p className="text-xs text-gray-500">Usuarios nuevos</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Filtros y tabla - Exactamente como en la imagen */}
-              <Card className="border border-gray-200 ">
-
-
+              <Card className="border border-gray-200">
                 {/* Filtros en fila horizontal */}
-                <div className="p-4  m-4">
+                <div className="p-4 m-4">
                   <div className="flex flex-wrap items-end gap-4">
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Buscar</Label>
                       <Input
-                        placeholder="Nombre, usuario, email, RUC..."
+                        placeholder="Matrícula, tracker, empresa..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         variant="minimal"
                         fieldSize="sm"
-                        className="w-[200px]"
+                        className="w-[250px]"
                       />
                     </div>
                     <div className="flex flex-col">
-                      <Label className="text-sm font-medium text-gray-700 mb-1">Estado</Label>
-                      <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
-                        <SelectTrigger variant="minimal" size="sm" className="w-[120px]">
-                          <SelectValue placeholder="Estado" />
+                      <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
+                      <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
+                        <SelectTrigger variant="minimal" size="sm" className="w-[200px]">
+                          <SelectValue placeholder="Empresa" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          <SelectItem value="activo">Activo</SelectItem>
-                          <SelectItem value="inactivo">Inactivo</SelectItem>
+                          <SelectItem value="todos">Todas</SelectItem>
+                          {empresas.map((empresa) => (
+                            <SelectItem key={empresa.id} value={empresa.id.toString()}>
+                              {empresa.nombre_comercial}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -650,8 +407,8 @@ const Users: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="fecha">Fecha Creación</SelectItem>
-                          <SelectItem value="nombre">Nombre</SelectItem>
-                          <SelectItem value="ruc">RUC</SelectItem>
+                          <SelectItem value="matricula">Matrícula</SelectItem>
+                          <SelectItem value="empresa">Empresa</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -683,115 +440,88 @@ const Users: React.FC = () => {
                       size="sm"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Usuario
+                      Nueva Matrícula
                     </Button>
                   </div>
                 </div>
 
-
-
                 <CardContent className="p-0">
                   <div className="overflow-x-auto mx-4">
-                    <table className="w-full text-sm ">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Nombre Completo</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Email</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">RUC</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Rol</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">ID</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Matrícula</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Tracker ID</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Empresa</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Activo</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario Creación</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha Creación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {usuariosPaginados.map((usuario) => (
-                          <tr key={usuario.id} className="">
+                        {matriculasPaginadas.map((matricula) => (
+                          <tr key={matricula.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {usuario.name} {usuario.last_name}
+                              {matricula.id}
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {usuario.username}
+                              <span className="font-medium">{matricula.nro_matricula}</span>
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {usuario.email}
+                              {matricula.tracker_id || '-'}
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {usuario.ruc}
+                              {matricula.empresa_nombre || '-'}
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
-                              <span className={`px-2 py-1 text-xs rounded ${usuario.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                                {usuario.role === 'admin' ? 'Administrador' : 'Usuario'}
-                              </span>
+                              {matricula.usuario_creacion || '-'}
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
-                              {usuario.empresa_nombre || 'Sin empresa'}
-                            </td>
-                            <td className="px-3 py-1 text-center text-gray-700">
-                              {new Date(usuario.created_at).toLocaleDateString('es-ES')}
+                              {new Date(matricula.created_at).toLocaleDateString('es-ES')}
                             </td>
                             <td className="px-3 py-1 text-center">
-                              <div className="flex items-center justify-center">
-                                <div className={`w-3 h-3 rounded-full ${usuario.activo ? 'bg-green-500' : 'bg-red-500'}`}
-                                  title={usuario.activo ? 'Activo' : 'Inactivo'}>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 py-1 text-center">
-
                               <div className="flex items-center justify-center gap-2">
                                 <Button
                                   variant="minimal"
                                   size="xs"
-                                  onClick={() => handleEdit(usuario)}
-                                  disabled={!usuario.activo}
+                                  onClick={() => handleEdit(matricula)}
                                   className="h-7 w-7 p-0"
+                                  title="Editar Tracker ID"
                                 >
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                <Button
-                                  variant="minimal"
-                                  size="xs"
-                                  onClick={() => openDeleteDialog(usuario.id, usuario.activo)}
-                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Power className="h-3 w-3" />
-                                </Button>
                               </div>
-
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-
                   </div>
 
-                  {filteredUsuarios.length === 0 && !loading && (
+                  {filteredMatriculas.length === 0 && !loading && (
                     <div className="text-center py-12">
-                      <UsersIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <Car className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+                        {searchTerm ? 'No se encontraron matrículas' : 'No hay matrículas registradas'}
                       </h3>
                       <p className="text-gray-500 mb-4">
                         {searchTerm
-                          ? 'No hay usuarios que coincidan con tu búsqueda.'
-                          : 'Comienza agregando el primer usuario al sistema.'
+                          ? 'No hay matrículas que coincidan con tu búsqueda.'
+                          : 'Comienza agregando tu primera matrícula al sistema.'
                         }
                       </p>
                       {!searchTerm && (
                         <Button onClick={() => setIsCreateModalOpen(true)}>
                           <Plus className="w-4 h-4 mr-2" />
-                          Agregar Primer Usuario
+                          Agregar Primera Matrícula
                         </Button>
                       )}
                     </div>
                   )}
                 </CardContent>
 
-                {/* Paginación - Exactamente como en la imagen */}
+                {/* Paginación */}
                 <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 mb-4">
                   <Button
                     variant="minimal"
@@ -804,15 +534,14 @@ const Users: React.FC = () => {
                   </Button>
 
                   <span className="text-sm text-gray-500">
-                    Página {paginaActual} de {totalPaginas} - {filteredUsuarios.length} registros
-
+                    Página {paginaActual} de {totalPaginas || 1} - {filteredMatriculas.length} registros
                   </span>
 
                   <Button
                     variant="minimal"
                     size="sm"
                     className="px-3 text-gray-700"
-                    disabled={paginaActual === totalPaginas}
+                    disabled={paginaActual === totalPaginas || totalPaginas === 0}
                     onClick={() => setPaginaActual(paginaActual + 1)}
                   >
                     Siguiente
@@ -820,13 +549,13 @@ const Users: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Modal para crear/editar usuario */}
+              {/* Modal para crear/editar matrícula */}
               {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-6">
                       <h2 className="text-xl font-bold">
-                        {editingUsuario ? 'Editar Usuario' : 'Nuevo Usuario'}
+                        {editingMatricula ? 'Editar Matrícula' : 'Nueva Matrícula'}
                       </h2>
                       <Button
                         variant="minimal"
@@ -841,213 +570,60 @@ const Users: React.FC = () => {
                     </div>
 
                     <p className="text-gray-600 mb-6">
-                      {editingUsuario
-                        ? 'Modifica los datos del usuario seleccionado.'
-                        : 'Completa la información para registrar un nuevo usuario.'
+                      {editingMatricula
+                        ? 'Solo puedes modificar el Tracker ID de la matrícula.'
+                        : 'Completa la información para registrar una nueva matrícula.'
                       }
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Nombre *</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Ej: Juan"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last_name">Apellido *</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="last_name"
-                            value={formData.last_name}
-                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                            placeholder="Ej: Pérez"
-                            required
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nro_matricula">Número de Matrícula *</Label>
+                        <Input
+                          variant="minimal"
+                          fieldSize="sm"
+                          id="nro_matricula"
+                          value={formData.nro_matricula}
+                          onChange={(e) => setFormData({ ...formData, nro_matricula: e.target.value })}
+                          placeholder="Ej: ABC-1234"
+                          required
+                          disabled={!!editingMatricula}
+                        />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Usuario *</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="username"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                            placeholder="Ej: jperez"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email *</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="Ej: juan@ejemplo.com"
-                            required
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tracker_id">Tracker ID</Label>
+                        <Input
+                          variant="minimal"
+                          fieldSize="sm"
+                          id="tracker_id"
+                          value={formData.tracker_id}
+                          onChange={(e) => setFormData({ ...formData, tracker_id: e.target.value })}
+                          placeholder="Ej: TRACK-001"
+                        />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {!editingMatricula && (
                         <div className="space-y-2">
-                          <Label htmlFor="ruc">RUC *</Label>
-                          <Input
-                            variant="minimal"
-                            fieldSize="sm"
-                            id="ruc"
-                            value={formData.ruc}
-                            onChange={(e) => setFormData({ ...formData, ruc: e.target.value })}
-                            placeholder="Ej: 12345678-9"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label htmlFor="password">
-                              {editingUsuario ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
-                            </Label>
-                            {!editingUsuario && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setFormData({ ...formData, password: generatePassword(8) })}
-                                className="h-auto py-1 px-2 text-xs"
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Generar
-                              </Button>
-                            )}
-                          </div>
-                          <div className="relative">
-                            <Input
-                              variant="minimal"
-                              fieldSize="sm"
-                              id="password"
-                              type={showPassword ? "text" : "password"}
-                              value={formData.password}
-                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                              placeholder="••••••••"
-                              required={!editingUsuario}
-                              className="pr-10"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4 text-gray-500" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-gray-500" />
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Mínimo 6 caracteres
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="role">Rol *</Label>
-                          <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                          <Label htmlFor="empresa_id">Empresa</Label>
+                          <Select 
+                            value={formData.empresa_id} 
+                            onValueChange={(value) => setFormData({ ...formData, empresa_id: value })}
+                          >
                             <SelectTrigger variant="minimal" size="sm">
-                              <SelectValue placeholder="Selecciona un rol" />
+                              <SelectValue placeholder="Seleccionar empresa..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="user">Usuario</SelectItem>
+                              <SelectItem value="">Sin empresa</SelectItem>
+                              {empresas.map((empresa) => (
+                                <SelectItem key={empresa.id} value={empresa.id.toString()}>
+                                  {empresa.nombre_comercial} - {empresa.ruc}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="empresa">Empresa</Label>
-                          <Popover 
-                            open={openEmpresaCombobox && formData.role !== 'admin'} 
-                            onOpenChange={(open) => {
-                              if (formData.role !== 'admin') {
-                                setOpenEmpresaCombobox(open);
-                              }
-                            }}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={openEmpresaCombobox}
-                                className="w-full justify-between"
-                                disabled={formData.role === 'admin'}
-                              >
-                                {formData.empresa_id
-                                  ? empresas.find((empresa) => empresa.id.toString() === formData.empresa_id)?.nombre_comercial || "Selecciona una empresa"
-                                  : "Selecciona una empresa"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full p-0">
-                              <Command>
-                                <CommandInput placeholder="Buscar empresa..." className="h-9" />
-                                <CommandList>
-                                  <CommandEmpty>No se encontró ninguna empresa.</CommandEmpty>
-                                  <CommandGroup>
-                                    <CommandItem
-                                      value="sin-empresa"
-                                      onSelect={() => {
-                                        setFormData({ ...formData, empresa_id: '' });
-                                        setOpenEmpresaCombobox(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${formData.empresa_id === '' ? 'opacity-100' : 'opacity-0'}`}
-                                      />
-                                      Sin empresa
-                                    </CommandItem>
-                                    {empresas.map((empresa) => (
-                                      <CommandItem
-                                        key={empresa.id}
-                                        value={empresa.id.toString()}
-                                        onSelect={() => {
-                                          setFormData({ ...formData, empresa_id: empresa.id.toString() });
-                                          setOpenEmpresaCombobox(false);
-                                        }}
-                                      >
-                                        <Check
-                                          className={`mr-2 h-4 w-4 ${formData.empresa_id === empresa.id.toString() ? 'opacity-100' : 'opacity-0'}`}
-                                        />
-                                        {empresa.nombre_comercial} - {empresa.ruc}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          {formData.role === 'admin' && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Los administradores se asignan automáticamente a la empresa principal
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      )}
 
                       {error && (
                         <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -1079,7 +655,7 @@ const Users: React.FC = () => {
                               Guardando...
                             </>
                           ) : (
-                            <>{editingUsuario ? 'Actualizar' : 'Crear'} Usuario</>
+                            <>{editingMatricula ? 'Actualizar' : 'Crear'} Matrícula</>
                           )}
                         </Button>
                       </div>
@@ -1092,43 +668,8 @@ const Users: React.FC = () => {
         </div>
       </div>
       <Toaster />
-
-      {/* AlertDialog para confirmar activación/desactivación */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {usuarioToDelete?.activo ? 'Desactivar Usuario' : 'Activar Usuario'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {usuarioToDelete?.activo
-                ? '¿Está seguro de desactivar este usuario? El usuario no podrá acceder al sistema.'
-                : '¿Está seguro de activar este usuario? El usuario podrá volver a acceder al sistema.'
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setDeleteDialogOpen(false);
-              setUsuarioToDelete(null);
-            }}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (usuarioToDelete) {
-                  handleDelete(usuarioToDelete.id, usuarioToDelete.activo);
-                }
-              }}
-              className={usuarioToDelete?.activo ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
-            >
-              {usuarioToDelete?.activo ? 'Desactivar' : 'Activar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
 
-export default Users;
+export default Matriculas;
