@@ -203,7 +203,9 @@ const Ventas: React.FC = () => {
       venta.nombre_cliente?.toLowerCase().includes(searchLower) ||
       venta.ruc_cliente?.toLowerCase().includes(searchLower) ||
       venta.matricula?.toLowerCase().includes(searchLower) ||
-      venta.nombre_chofer?.toLowerCase().includes(searchLower);
+      venta.nombre_chofer?.toLowerCase().includes(searchLower) ||
+      venta.nombre_estacion?.toLowerCase().includes(searchLower) ||
+      venta.codigo_estacion?.toLowerCase().includes(searchLower);
 
     // Filtro de fechas
     const ventaFecha = venta.fecha ? new Date(venta.fecha) : null;
@@ -411,7 +413,7 @@ const Ventas: React.FC = () => {
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Buscar</Label>
                       <Input
-                        placeholder="Ticket, cliente, matrícula, chofer..."
+                        placeholder="Ticket, cliente, matrícula, chofer, estación..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         variant="minimal"
