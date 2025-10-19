@@ -338,7 +338,7 @@ const Users: React.FC = () => {
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
-      console.log(response)
+      // console.log(response)
 
       // const result = await response.json();
       // console.log('Usuario actualizado:', result);
@@ -559,7 +559,7 @@ const Users: React.FC = () => {
                     <UsersIcon className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-blue-600">
                       {usuarios.length}
                     </div>
                     <p className="text-xs text-gray-500">Total registrados</p>
@@ -572,7 +572,7 @@ const Users: React.FC = () => {
                     <UsersIcon className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {usuarios.filter(u => u.activo).length}
                     </div>
                     <p className="text-xs text-gray-500">Usuarios activos</p>
@@ -585,7 +585,7 @@ const Users: React.FC = () => {
                     <UsersIcon className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-blue-600">
                       {usuarios.filter(u => !u.activo).length}
                     </div>
                     <p className="text-xs text-gray-500">Usuarios inactivos</p>
@@ -598,7 +598,7 @@ const Users: React.FC = () => {
                     <UsersIcon className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {usuarios.filter(u => {
                         const createdDate = new Date(u.created_at);
                         const currentDate = new Date();

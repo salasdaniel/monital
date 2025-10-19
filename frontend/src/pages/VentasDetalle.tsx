@@ -358,7 +358,7 @@ const VentasDetalle: React.FC = () => {
                     <ShoppingCart className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {formatInteger(totalVentas)}
                     </div>
                     <p className="text-xs text-gray-500">Ventas únicas</p>
@@ -371,7 +371,7 @@ const VentasDetalle: React.FC = () => {
                     <Package className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {formatInteger(Math.round(topProductoCantidad))} L.
                     </div>
                     <p className="text-xs text-gray-500">{topProductoNombre}</p>
@@ -384,7 +384,7 @@ const VentasDetalle: React.FC = () => {
                     <DollarSign className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {formatCurrency(montoTotal.toString())}
                     </div>
                     <p className="text-xs text-gray-500">Total en ventas</p>
@@ -397,7 +397,7 @@ const VentasDetalle: React.FC = () => {
                     <TrendingUp className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-500">
+                    <div className="text-2xl font-bold text-blue-600">
                       {formatCurrency(cargaPromedio.toString())}
                     </div>
                     <p className="text-xs text-gray-500">Promedio por venta (cantidad)</p>
@@ -586,7 +586,7 @@ const VentasDetalle: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-center text-gray-700">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-500">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
                                 {detalle.matricula || 'N/A'}
                               </span>
                             </td>
