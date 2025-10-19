@@ -50,7 +50,7 @@ class Empresa(models.Model):
 class Matricula(models.Model):
     id = models.AutoField(primary_key=True)
     nro_matricula = models.CharField(max_length=50, unique=True)
-    cod_interno = models.CharField(max_length=100, null=True, blank=True)
+    tracker_id = models.CharField(max_length=100, null=True, blank=True)
     empresa = models.ForeignKey(
         'Empresa',
         on_delete=models.SET_NULL,
