@@ -11,7 +11,7 @@ import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, DollarSign, TrendingUp, Package, Check, ChevronsUpDown } from "lucide-react";
+import { ShoppingCart, DollarSign, Check, ChevronsUpDown, MapPin, Car } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
@@ -239,12 +239,40 @@ const Ventas: React.FC = () => {
   const totalMonto = ventasFiltradas.reduce((sum, venta) => {
     return sum + (venta.total ? parseFloat(venta.total) : 0);
   }, 0);
-  const empresasUnicas = new Set(ventasFiltradas.map(v => v.empresa_ruc).filter(Boolean)).size;
-  const productosVendidos = ventasFiltradas.reduce((sum, venta) => {
-    return sum + venta.lineas.reduce((lineSum, linea) => {
-      return lineSum + (linea.cantidad ? parseFloat(linea.cantidad) : 0);
-    }, 0);
-  }, 0);
+
+  // Card 2: Estación más utilizada (por cantidad de ventas)
+  let estacionMasUtilizada = 'N/A';
+  let estacionCantidad = 0;
+  {
+    const acumulado = new Map<string, number>();
+    for (const venta of ventasFiltradas) {
+      const key = venta.nombre_estacion || venta.codigo_estacion || 'Desconocida';
+      acumulado.set(key, (acumulado.get(key) || 0) + 1);
+    }
+    Array.from(acumulado.entries()).forEach(([k, v]) => {
+      if (v > estacionCantidad) {
+        estacionCantidad = v;
+        estacionMasUtilizada = k;
+      }
+    });
+  }
+
+  // Card 3: Chapa (matrícula) con más cargas
+  let chapaConMasCargas = 'N/A';
+  let chapaCantidad = 0;
+  {
+    const acumulado = new Map<string, number>();
+    for (const venta of ventasFiltradas) {
+      const key = venta.matricula || 'Sin matrícula';
+      acumulado.set(key, (acumulado.get(key) || 0) + 1);
+    }
+    Array.from(acumulado.entries()).forEach(([k, v]) => {
+      if (v > chapaCantidad) {
+        chapaCantidad = v;
+        chapaConMasCargas = k;
+      }
+    });
+  }
 
   // Paginación
   const totalPaginas = Math.ceil(ventasFiltradas.length / itemsPorPagina);
@@ -351,27 +379,27 @@ const Ventas: React.FC = () => {
 
                 <Card className="border border-gray-200">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Empresas</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-gray-400" />
+                    <CardTitle className="text-sm font-medium text-gray-600">Estación más utilizada</CardTitle>
+                    <MapPin className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      {empresasUnicas}
+                      {estacionMasUtilizada}
                     </div>
-                    <p className="text-xs text-gray-500">Empresas únicas</p>
+                    <p className="text-xs text-gray-500">{estacionCantidad.toLocaleString('es-PY')} cargas</p>
                   </CardContent>
                 </Card>
 
                 <Card className="border border-gray-200">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Productos</CardTitle>
-                    <Package className="h-4 w-4 text-gray-400" />
+                    <CardTitle className="text-sm font-medium text-gray-600">Chapa con más cargas</CardTitle>
+                    <Car className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      {productosVendidos}
+                      {chapaConMasCargas}
                     </div>
-                    <p className="text-xs text-gray-500">Unidades vendidas</p>
+                    <p className="text-xs text-gray-500">{chapaCantidad.toLocaleString('es-PY')} cargas</p>
                   </CardContent>
                 </Card>
               </div>
