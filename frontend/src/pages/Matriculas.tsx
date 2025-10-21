@@ -5,13 +5,16 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
 import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Car, AlertCircle, X, Edit2 } from "lucide-react";
+import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
+import { cn } from "../lib/utils";
 
 // Interfaces basadas en la API
 interface Matricula {
@@ -46,6 +49,7 @@ interface Empresa {
 interface UserData {
   username: string;
   role?: string;
+  empresa_id?: number;
 }
 
 const Matriculas: React.FC = () => {
@@ -62,11 +66,12 @@ const Matriculas: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
 
   // Estados para filtros y paginación
-  const [empresaFiltro, setEmpresaFiltro] = useState<string>('todos');
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
   const [ordenDireccion, setOrdenDireccion] = useState<'asc' | 'desc'>('desc');
   const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
   const [paginaActual, setPaginaActual] = useState<number>(1);
+  const [empresaId, setEmpresaId] = useState<number | null>(null);
+  const [openCombobox, setOpenCombobox] = useState(false);
 
   const [formData, setFormData] = useState<MatriculaFormData>({
     nro_matricula: '',
@@ -76,19 +81,40 @@ const Matriculas: React.FC = () => {
 
   useEffect(() => {
     // Obtener datos del usuario desde localStorage
-    const user = getUser();
-    setUser(user);
+    const userData = getUser();
+    setUser(userData);
+    
+    // Si el usuario es 'user', se asigna su empresa_id automáticamente
+    // Si es admin u otro rol, se inicializa en 0 (todas las matrículas)
+    if (userData.role === 'user') {
+      setEmpresaId(userData.empresa_id);
+    } else {
+      setEmpresaId(0); // Admin ve todas las matrículas por defecto
+    }
   }, []);
 
   useEffect(() => {
-    fetchMatriculas();
+    // Solo ejecutar fetchMatriculas si empresaId ya está inicializado
+    if (empresaId !== null) {
+      fetchMatriculas();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId]);
+
+  // Cargar empresas para el combobox (solo si el rol NO es 'user')
+  useEffect(() => {
+    // Si el rol es 'user', no necesitamos cargar la lista de empresas
+    if (user?.role === 'user') {
+      return;
+    }
+
     fetchEmpresas();
-  }, []);
+  }, [user]);
 
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [searchTerm, empresaFiltro, ordenarPor, ordenDireccion, itemsPorPagina]);
+  }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, empresaId]);
 
   const fetchEmpresas = async () => {
     try {
@@ -117,7 +143,19 @@ const Matriculas: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(API_URLS.MATRICULAS, {
+      const role = user?.role;
+      
+      // Construir URL: si es 'user' siempre envía su empresa_id
+      // Si es admin y seleccionó una empresa (empresaId > 0), envía ese filtro
+      // Si es admin y NO seleccionó empresa (empresaId === 0), no envía filtro (trae todas)
+      let url = API_URLS.MATRICULAS;
+      if (role === 'user') {
+        url = `${API_URLS.MATRICULAS}?empresa_id=${empresaId}`;
+      } else if (empresaId && empresaId > 0) {
+        url = `${API_URLS.MATRICULAS}?empresa_id=${empresaId}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -285,18 +323,13 @@ const Matriculas: React.FC = () => {
   // Lógica de filtrado, ordenamiento y paginación
   const filteredMatriculas = matriculas
     .filter(matricula => {
-      // Filtro por búsqueda
+      // Filtro por búsqueda (el filtro por empresa se aplica en la API)
       const matchesSearch =
         matricula.nro_matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (matricula.tracker_id && matricula.tracker_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (matricula.empresa_nombre && matricula.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Filtro por empresa
-      const matchesEmpresa =
-        empresaFiltro === 'todos' ? true :
-          matricula.empresa_id?.toString() === empresaFiltro;
-
-      return matchesSearch && matchesEmpresa;
+      return matchesSearch;
     })
     .sort((a, b) => {
       // Ordenamiento
@@ -383,22 +416,69 @@ const Matriculas: React.FC = () => {
                         className="w-[250px]"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
-                      <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
-                        <SelectTrigger variant="minimal" size="sm" className="w-[200px]">
-                          <SelectValue placeholder="Empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todas</SelectItem>
-                          {empresas.map((empresa) => (
-                            <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                              {empresa.nombre_comercial}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {user?.role !== 'user' && (
+                      <div className="flex flex-col">
+                        <Label className="text-sm font-medium text-gray-700 mb-1">Empresa</Label>
+                        <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="minimal"
+                              role="combobox"
+                              aria-expanded={openCombobox}
+                              className="w-[240px] justify-between h-9"
+                            >
+                              {empresaId === 0
+                                ? "Todas las matrículas"
+                                : empresas.find((empresa) => empresa.id === empresaId)?.nombre_comercial || "Seleccionar empresa..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar empresa..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontraron empresas.</CommandEmpty>
+                                <CommandGroup>
+                                  <CommandItem
+                                    value="todas"
+                                    onSelect={() => {
+                                      setEmpresaId(0);
+                                      setOpenCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        empresaId === 0 ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    Todas las matrículas
+                                  </CommandItem>
+                                  {empresas.map((empresa) => (
+                                    <CommandItem
+                                      key={empresa.id}
+                                      value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                      onSelect={() => {
+                                        setEmpresaId(empresa.id);
+                                        setOpenCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          empresaId === empresa.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {empresa.nombre_comercial} ({empresa.ruc})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       <Label className="text-sm font-medium text-gray-700 mb-1">Ordenar por</Label>
                       <Select value={ordenarPor} onValueChange={setOrdenarPor}>
@@ -434,14 +514,16 @@ const Matriculas: React.FC = () => {
                       </Select>
                     </div>
 
-                    <Button
-                      onClick={() => setIsCreateModalOpen(true)}
-                      variant="minimal"
-                      size="sm"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nueva Matrícula
-                    </Button>
+                    {user?.role === 'admin' && (
+                      <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        variant="minimal"
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nueva Matrícula
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -456,7 +538,9 @@ const Matriculas: React.FC = () => {
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Empresa</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario Creación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha Creación</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Acciones</th>
+                          {user?.role === 'admin' && (
+                            <th className="text-center px-3 py-1 text-gray-700 font-medium">Acciones</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -480,19 +564,21 @@ const Matriculas: React.FC = () => {
                             <td className="px-3 py-1 text-center text-gray-700">
                               {new Date(matricula.created_at).toLocaleDateString('es-ES')}
                             </td>
-                            <td className="px-3 py-1 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="minimal"
-                                  size="xs"
-                                  onClick={() => handleEdit(matricula)}
-                                  className="h-7 w-7 p-0"
-                                  title="Editar Tracker ID"
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </td>
+                            {user?.role === 'admin' && (
+                              <td className="px-3 py-1 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <Button
+                                    variant="minimal"
+                                    size="xs"
+                                    onClick={() => handleEdit(matricula)}
+                                    className="h-7 w-7 p-0"
+                                    title="Editar Tracker ID"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
