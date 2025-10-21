@@ -7,11 +7,12 @@ import { Card, CardContent } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "../components/ui/alert-dialog";
 import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown, Upload } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
@@ -73,6 +74,8 @@ const Matriculas: React.FC = () => {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [openModalCombobox, setOpenModalCombobox] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState<MatriculaFormData>({
     nro_matricula: '',
@@ -322,6 +325,76 @@ const Matriculas: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
+  // Función para manejar la importación de archivo XLSX
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    
+    if (!file) return;
+
+    // Validar extensión
+    if (!file.name.endsWith('.xlsx')) {
+      toast({
+        title: "Error de formato",
+        description: "Por favor selecciona un archivo Excel (.xlsx)",
+        variant: "destructive",
+      });
+      event.target.value = '';
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(API_URLS.IMPORT_MATRICULAS, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-App-Key': APP_KEY
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Mostrar resultado de la importación
+      toast({
+        title: "¡Importación completada!",
+        description: `Creadas: ${result.created}, Actualizadas: ${result.updated}, Errores: ${result.total_errors}`,
+        variant: result.total_errors > 0 ? "default" : "success",
+      });
+
+      // Si hay errores, mostrarlos en consola
+      if (result.errors && result.errors.length > 0) {
+        console.log('Errores en la importación:', result.errors);
+      }
+
+      // Actualizar la lista de matrículas
+      await fetchMatriculas();
+
+      // Cerrar el diálogo después de una importación exitosa
+      setIsImportDialogOpen(false);
+
+    } catch (err) {
+      toast({
+        title: "Error en la importación",
+        description: err instanceof Error ? err.message : 'Error desconocido',
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+      event.target.value = ''; // Limpiar el input
+    }
+  };
+
   // Lógica de filtrado, ordenamiento y paginación
   const filteredMatriculas = matriculas
     .filter(matricula => {
@@ -517,14 +590,26 @@ const Matriculas: React.FC = () => {
                     </div>
 
                     {user?.role === 'admin' && (
-                      <Button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        variant="minimal"
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nueva Matrícula
-                      </Button>
+                      <>
+                        <Button
+                          onClick={() => setIsCreateModalOpen(true)}
+                          variant="minimal"
+                          size="sm"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nueva Matrícula
+                        </Button>
+
+                        <Button
+                          onClick={() => setIsImportDialogOpen(true)}
+                          variant="minimal"
+                          size="sm"
+                          disabled={isImporting}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Importar Excel
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -636,6 +721,84 @@ const Matriculas: React.FC = () => {
                   </Button>
                 </div>
               </Card>
+
+              {/* Diálogo para importar matrículas desde Excel */}
+              <AlertDialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <AlertDialogContent className="max-w-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Importar Matrículas desde Excel</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mt-4">
+                        <h3 className="font-semibold text-blue-900 mb-2">Instrucciones:</h3>
+                        <ul className="list-disc list-inside space-y-2 text-sm text-blue-800">
+                          <li>El archivo debe ser formato <strong>Excel (.xlsx)</strong></li>
+                          <li>Debe contener <strong>2 columnas</strong>: matricula y tracker_id</li>
+                          <li>La primera fila debe contener los encabezados</li>
+                          <li>Si la matrícula <strong>ya existe</strong>: se actualizará el tracker_id</li>
+                          <li>Si la matrícula <strong>no existe</strong>: se creará una nueva</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <h3 className="font-semibold text-gray-900 mb-2">Ejemplo de formato:</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm border-collapse border border-gray-300">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                <th className="border border-gray-300 px-4 py-2 text-left">matricula</th>
+                                <th className="border border-gray-300 px-4 py-2 text-left">tracker_id</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="border border-gray-300 px-4 py-2">ABC-1234</td>
+                                <td className="border border-gray-300 px-4 py-2">TRACK-001</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-gray-300 px-4 py-2">XYZ-5678</td>
+                                <td className="border border-gray-300 px-4 py-2">TRACK-002</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-gray-300 px-4 py-2">DEF-9012</td>
+                                <td className="border border-gray-300 px-4 py-2">TRACK-003</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="import-file-input">Seleccionar archivo Excel:</Label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            id="import-file-input"
+                            type="file"
+                            accept=".xlsx"
+                            onChange={handleFileImport}
+                            disabled={isImporting}
+                            className="block w-full text-sm text-gray-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-md file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-blue-50 file:text-blue-700
+                              hover:file:bg-blue-100
+                              disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        {isImporting && (
+                          <div className="flex items-center gap-2 text-blue-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span className="text-sm">Procesando archivo...</span>
+                          </div>
+                        )}
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isImporting}>Cerrar</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {/* Modal para crear/editar matrícula */}
               {isCreateModalOpen && (

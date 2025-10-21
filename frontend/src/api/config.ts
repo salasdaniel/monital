@@ -21,6 +21,7 @@ const API_CONFIG = {
     MATRICULAS: '/api/matriculas/',
     ADD_MATRICULAS: '/api/matriculas/add/',
     UPDATE_MATRICULAS: (id: number) => `/api/matriculas/update/${id}/`,
+    IMPORT_MATRICULAS: '/api/matriculas/import/',
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
@@ -49,6 +50,7 @@ export const API_URLS = {
   MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.MATRICULAS),
   ADD_MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.ADD_MATRICULAS),
   UPDATE_MATRICULAS: (id: number) => getApiUrl(API_CONFIG.ENDPOINTS.UPDATE_MATRICULAS(id)),
+  IMPORT_MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.IMPORT_MATRICULAS),
 };
 
 export const APP_KEY = API_CONFIG.APP_KEY;
