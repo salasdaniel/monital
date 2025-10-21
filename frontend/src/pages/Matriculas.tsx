@@ -72,6 +72,7 @@ const Matriculas: React.FC = () => {
   const [paginaActual, setPaginaActual] = useState<number>(1);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [openCombobox, setOpenCombobox] = useState(false);
+  const [openModalCombobox, setOpenModalCombobox] = useState(false);
 
   const [formData, setFormData] = useState<MatriculaFormData>({
     nro_matricula: '',
@@ -194,7 +195,7 @@ const Matriculas: React.FC = () => {
         payload.tracker_id = formData.tracker_id;
       }
       
-      if (formData.empresa_id) {
+      if (formData.empresa_id && formData.empresa_id !== 'sin_empresa') {
         payload.empresa_id = parseInt(formData.empresa_id);
       }
 
@@ -307,6 +308,7 @@ const Matriculas: React.FC = () => {
     });
     setEditingMatricula(null);
     setError(null);
+    setOpenModalCombobox(false);
   };
 
   // Función para manejar la edición (solo tracker_id)
@@ -692,22 +694,64 @@ const Matriculas: React.FC = () => {
                       {!editingMatricula && (
                         <div className="space-y-2">
                           <Label htmlFor="empresa_id">Empresa</Label>
-                          <Select 
-                            value={formData.empresa_id} 
-                            onValueChange={(value) => setFormData({ ...formData, empresa_id: value })}
-                          >
-                            <SelectTrigger variant="minimal" size="sm">
-                              <SelectValue placeholder="Seleccionar empresa..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Sin empresa</SelectItem>
-                              {empresas.map((empresa) => (
-                                <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                                  {empresa.nombre_comercial} - {empresa.ruc}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={openModalCombobox} onOpenChange={setOpenModalCombobox}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="minimal"
+                                role="combobox"
+                                aria-expanded={openModalCombobox}
+                                className="w-full justify-between h-9"
+                              >
+                                {!formData.empresa_id || formData.empresa_id === 'sin_empresa'
+                                  ? "Sin empresa"
+                                  : empresas.find((empresa) => empresa.id.toString() === formData.empresa_id)?.nombre_comercial || "Seleccionar empresa..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput placeholder="Buscar empresa..." />
+                                <CommandList>
+                                  <CommandEmpty>No se encontraron empresas.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandItem
+                                      value="sin_empresa"
+                                      onSelect={() => {
+                                        setFormData({ ...formData, empresa_id: 'sin_empresa' });
+                                        setOpenModalCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          (!formData.empresa_id || formData.empresa_id === 'sin_empresa') ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      Sin empresa
+                                    </CommandItem>
+                                    {empresas.map((empresa) => (
+                                      <CommandItem
+                                        key={empresa.id}
+                                        value={`${empresa.nombre_comercial} ${empresa.ruc}`}
+                                        onSelect={() => {
+                                          setFormData({ ...formData, empresa_id: empresa.id.toString() });
+                                          setOpenModalCombobox(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            formData.empresa_id === empresa.id.toString() ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {empresa.nombre_comercial} ({empresa.ruc})
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       )}
 
