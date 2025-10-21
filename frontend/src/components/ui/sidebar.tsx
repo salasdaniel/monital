@@ -10,7 +10,8 @@ import {
   Monitor,
   Users,
   Coins,
-  ChartColumnIncreasing
+  ChartColumnIncreasing,
+  Car
 } from 'lucide-react';
 
 
@@ -58,14 +59,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Empresas',
       icon: <Building2 className="h-5 w-5" />,
       href: '/empresas',
-      roles: ['admin', 'user', 'moderator']
+      roles: ['admin', 'moderator']
     },
     {
       id: 'users',
       label: 'Usuarios',
       icon: <Users className="h-5 w-5" />,
       href: '/users',
-      roles: ['admin', 'user', 'moderator']
+      roles: ['admin',  'moderator']
     },
     {
       id: 'ventas',
@@ -84,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'matriculas',
       label: 'Matriculas',
-      icon: <ChartColumnIncreasing className="h-5 w-5" />,
+      icon: <Car className="h-5 w-5" />,
       href: '/matriculas',
       roles: ['admin', 'user', 'moderator']
     },
@@ -178,6 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer */}
+      
       <div className="p-4 border-t border-gray-200">
         {!isCollapsed && (
           <div className="text-xs text-gray-500 text-center">

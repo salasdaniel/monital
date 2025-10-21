@@ -76,6 +76,7 @@ const Matriculas: React.FC = () => {
   const [openModalCombobox, setOpenModalCombobox] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState<MatriculaFormData>({
     nro_matricula: '',
@@ -119,6 +120,15 @@ const Matriculas: React.FC = () => {
   useEffect(() => {
     setPaginaActual(1);
   }, [searchTerm, ordenarPor, ordenDireccion, itemsPorPagina, empresaId]);
+
+  // Limpiar archivo seleccionado cuando se cierra el diálogo
+  useEffect(() => {
+    if (!isImportDialogOpen) {
+      setSelectedFile(null);
+      const fileInput = document.getElementById('import-file-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    }
+  }, [isImportDialogOpen]);
 
   const fetchEmpresas = async () => {
     try {
@@ -325,11 +335,14 @@ const Matriculas: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  // Función para manejar la importación de archivo XLSX
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Función para manejar la selección del archivo
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
-    if (!file) return;
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
 
     // Validar extensión
     if (!file.name.endsWith('.xlsx')) {
@@ -339,6 +352,21 @@ const Matriculas: React.FC = () => {
         variant: "destructive",
       });
       event.target.value = '';
+      setSelectedFile(null);
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  // Función para ejecutar la importación
+  const handleFileImport = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No hay archivo seleccionado",
+        description: "Por favor selecciona un archivo Excel primero",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -347,7 +375,7 @@ const Matriculas: React.FC = () => {
     try {
       const token = localStorage.getItem('access_token');
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', selectedFile);
 
       const response = await fetch(API_URLS.IMPORT_MATRICULAS, {
         method: 'POST',
@@ -380,8 +408,13 @@ const Matriculas: React.FC = () => {
       // Actualizar la lista de matrículas
       await fetchMatriculas();
 
-      // Cerrar el diálogo después de una importación exitosa
+      // Limpiar archivo seleccionado y cerrar el diálogo
+      setSelectedFile(null);
       setIsImportDialogOpen(false);
+
+      // Limpiar el input file
+      const fileInput = document.getElementById('import-file-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
 
     } catch (err) {
       toast({
@@ -391,7 +424,6 @@ const Matriculas: React.FC = () => {
       });
     } finally {
       setIsImporting(false);
-      event.target.value = ''; // Limpiar el input
     }
   };
 
@@ -774,7 +806,7 @@ const Matriculas: React.FC = () => {
                             id="import-file-input"
                             type="file"
                             accept=".xlsx"
-                            onChange={handleFileImport}
+                            onChange={handleFileSelect}
                             disabled={isImporting}
                             className="block w-full text-sm text-gray-500
                               file:mr-4 file:py-2 file:px-4
@@ -785,6 +817,12 @@ const Matriculas: React.FC = () => {
                               disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
+                        {selectedFile && !isImporting && (
+                          <div className="flex items-center gap-2 text-green-600">
+                            <Check className="h-4 w-4" />
+                            <span className="text-sm">Archivo seleccionado: {selectedFile.name}</span>
+                          </div>
+                        )}
                         {isImporting && (
                           <div className="flex items-center gap-2 text-blue-600">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -796,6 +834,13 @@ const Matriculas: React.FC = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel disabled={isImporting}>Cerrar</AlertDialogCancel>
+                    <Button
+                      onClick={handleFileImport}
+                      disabled={!selectedFile || isImporting}
+                      variant="default"
+                    >
+                      {isImporting ? 'Importando...' : 'Importar'}
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
