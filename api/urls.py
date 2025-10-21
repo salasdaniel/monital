@@ -4,7 +4,7 @@ from .views.auth_views import LoginView, ProfileView
 from .views.empresas_views import EmpresaAddView, EmpresaListView, EmpresaDeactivateView, EmpresaUpdateView
 from .views.user_views import UserAddView, UserListView, UserUpdateView, UserDeactivateView
 from .views.shell_views import RegistrarVentaView, VentaListView, VentaDetalleListView
-from .views.matricula_view import MatriculaListView, MatriculaUpdateView, MatriculaAddView
+from .views.matricula_view import MatriculaListView, MatriculaUpdateView, MatriculaAddView, MatriculaImportView
 
 
 
@@ -34,4 +34,5 @@ urlpatterns = [
     path('matriculas/', MatriculaListView.as_view(), name='matricula-list'),
     path('matriculas/add/', MatriculaAddView.as_view(), name='matricula-add'),
     path('matriculas/update/<int:pk>/', MatriculaUpdateView.as_view(), name='matricula-update'),
+    path('matriculas/import/', MatriculaImportView.as_view(), name='matricula-import'),
 ]
