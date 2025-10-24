@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
+import DashboardCliente from './pages/DashboardCliente';
 import Empresas from './pages/Empresas';
 import Users from './pages/Users';
 import Ventas from './pages/Ventas';
@@ -60,6 +61,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Matriculas />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard-clientes" 
+          element={
+            <ProtectedRoute>
+              <DashboardCliente />
             </ProtectedRoute>
           } 
         />
