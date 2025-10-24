@@ -105,6 +105,7 @@ interface UserData {
   username: string;
   role: string;
   empresa_id?: number;
+  name: string;
 }
 
 const DashboardCliente: React.FC = () => {
@@ -130,23 +131,45 @@ const DashboardCliente: React.FC = () => {
         <Header title="Dashboard" subtitle="Resumen de ventas y consumo de combustible" />
 
         <main className="flex-1 p-6">
-          {/* Filtros */}
-          <div className="mb-6 flex items-center gap-4">
-            <div className="flex flex-col">
-              <Label className="text-sm font-medium text-gray-700 mb-1">Período</Label>
-              <Select value={periodo} onValueChange={setPeriodo}>
-                <SelectTrigger variant="minimal" size="sm" className="w-[180px]">
-                  <SelectValue placeholder="Seleccionar período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Últimos 7 días</SelectItem>
-                  <SelectItem value="30">Últimos 30 días</SelectItem>
-                  <SelectItem value="90">Últimos 3 meses</SelectItem>
-                  <SelectItem value="180">Últimos 6 meses</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {/* Card de Bienvenida y Filtros */}
+          <Card className="border-0 shadow-sm mb-6">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {/* Mensaje de Bienvenida */}
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                    Bienvenido {user?.name || 'Usuario'}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {new Date().toLocaleDateString('es-ES', { 
+                      day: 'numeric', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}, {new Date().toLocaleTimeString('es-ES', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+
+                {/* Selector de Período */}
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm font-semibold text-gray-700">Período:</Label>
+                  <Select value={periodo} onValueChange={setPeriodo}>
+                    <SelectTrigger className="w-[200px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                      <SelectValue placeholder="Seleccionar período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Últimos 7 días</SelectItem>
+                      <SelectItem value="30">Últimos 30 días</SelectItem>
+                      <SelectItem value="90">Últimos 3 meses</SelectItem>
+                      <SelectItem value="180">Últimos 6 meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* KPIs Cards - Estilo Horizon UI */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
@@ -155,7 +178,7 @@ const DashboardCliente: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Total Ventas</p>
+                    <p className="text-sm text-gray-500 mb-1">Total Cargas</p>
                     <h3 className="text-2xl font-bold text-gray-900">1,267</h3>
                     <div className="flex items-center gap-1 mt-2">
                       <span className="text-xs font-semibold text-green-500 flex items-center">
@@ -221,7 +244,7 @@ const DashboardCliente: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Estaciones Activas</p>
+                    <p className="text-sm text-gray-500 mb-1">Matriculas</p>
                     <h3 className="text-2xl font-bold text-gray-900">24</h3>
                     <div className="flex items-center gap-1 mt-2">
                       <span className="text-xs font-semibold text-green-500 flex items-center">

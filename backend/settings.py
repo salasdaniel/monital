@@ -14,6 +14,7 @@ ALLOWED_HOSTS = ["*"]
 
 # Apps instaladas
 INSTALLED_APPS = [
+    'django.contrib.auth',          # Necesaria para autenticación y permisos
     'django.contrib.contenttypes',  # Necesaria para migraciones y DRF
     'django.contrib.staticfiles',   # Solo para servir assets si hiciera falta
     'corsheaders',
