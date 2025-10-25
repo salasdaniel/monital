@@ -5,11 +5,15 @@ import Header from '../components/ui/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
-import { DollarSign, ShoppingCart, MapPin, Fuel, ArrowUp } from "lucide-react";
+import { DollarSign, ShoppingCart, MapPin, Fuel, Check, ChevronsUpDown } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "../components/ui/chart";
 import { API_URLS, APP_KEY } from '../api/config';
+import { cn } from "../lib/utils";
 // Datos estáticos para los gráficos
 
 interface DashboardData {
@@ -74,7 +78,10 @@ const DashboardCliente: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [empresaId, setEmpresaId] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);  // ← Cambiar de DashboardData[] a DashboardData | null
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [empresas, setEmpresas] = useState<Array<{ id: number; razon_social: string; ruc: string }>>([]);
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState<string>('');
+  const [openCombobox, setOpenCombobox] = useState(false);
 
 
   useEffect(() => {
@@ -85,20 +92,59 @@ const DashboardCliente: React.FC = () => {
     }
   }, []);
 
+  // Cargar empresas si es admin
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchEmpresas();
+    }
+  }, [user]);
+
+  const fetchEmpresas = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(API_URLS.EMPRESAS, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-App-Key': APP_KEY
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      const data = await response.json();
+      setEmpresas(data.empresas || []);
+      console.log('Empresas cargadas:', data.empresas);
+    } catch (err) {
+      console.error('Error al cargar empresas:', err);
+    }
+  };
+
    useEffect(() => {
-      // Solo ejecutar fetchDetalles si empresaId ya está inicializado
-      if (empresaId !== 0) {
+      // Determinar qué empresa usar
+      const idEmpresa = user?.role === 'admin' && empresaSeleccionada 
+        ? parseInt(empresaSeleccionada) 
+        : empresaId;
+        
+      // Solo ejecutar si hay una empresa válida
+      if (idEmpresa !== 0) {
         fetchDashboardData();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [empresaId, periodo]);
+    }, [empresaId, empresaSeleccionada, periodo]);
 
   const fetchDashboardData = async () => {
     try {
 
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      let url = `${API_URLS.DASHBOARD}?empresa_id=${empresaId}&cant_dias=${periodo}`;
+      
+      // Determinar qué empresa usar: si es admin y hay empresa seleccionada, usar esa; sino usar empresaId del usuario
+      const idEmpresa = user?.role === 'admin' && empresaSeleccionada 
+        ? parseInt(empresaSeleccionada) 
+        : empresaId;
+      
+      let url = `${API_URLS.DASHBOARD}?empresa_id=${idEmpresa}&cant_dias=${periodo}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -158,19 +204,73 @@ const DashboardCliente: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Selector de Período */}
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm font-semibold text-gray-700">Período:</Label>
-                  <Select value={periodo} onValueChange={setPeriodo}>
-                    <SelectTrigger className="w-[200px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
-                      <SelectValue placeholder="Seleccionar período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">Últimos 7 días</SelectItem>
-                      <SelectItem value="30">Últimos 30 días</SelectItem>
-                      <SelectItem value="60">Últimos 60 días</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Filtros */}
+                <div className="flex items-center gap-4">
+                  {/* Selector de Empresa - Solo para Admin */}
+                  {user?.role === 'admin' && (
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm font-semibold text-gray-700">Empresa:</Label>
+                      <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="minimal"
+                            role="combobox"
+                            aria-expanded={openCombobox}
+                            className="w-[300px] justify-between h-9 border-gray-200 bg-white hover:bg-gray-50"
+                          >
+                            {empresaSeleccionada === ''
+                              ? "Seleccionar empresa..."
+                              : empresas.find((empresa) => empresa.id.toString() === empresaSeleccionada)?.razon_social || "Seleccionar empresa..."
+                            }
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Buscar empresa..." />
+                            <CommandList>
+                              <CommandEmpty>No se encontraron empresas.</CommandEmpty>
+                              <CommandGroup>
+                                {empresas.map((empresa) => (
+                                  <CommandItem
+                                    key={empresa.id}
+                                    value={`${empresa.razon_social} ${empresa.ruc}`}
+                                    onSelect={() => {
+                                      setEmpresaSeleccionada(empresa.id.toString());
+                                      setOpenCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        empresaSeleccionada === empresa.id.toString() ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {empresa.razon_social}-{empresa.ruc}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
+                  {/* Selector de Período */}
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm font-semibold text-gray-700">Período:</Label>
+                    <Select value={periodo} onValueChange={setPeriodo}>
+                      <SelectTrigger className="w-[200px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                        <SelectValue placeholder="Seleccionar período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">Últimos 7 días</SelectItem>
+                        <SelectItem value="30">Últimos 30 días</SelectItem>
+                        <SelectItem value="60">Últimos 60 días</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </CardContent>
