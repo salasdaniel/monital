@@ -5,12 +5,50 @@ import Header from '../components/ui/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Label } from "../components/ui/label";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
+import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
 import { TrendingDown, DollarSign, ShoppingCart, MapPin, Fuel, ArrowUp } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "../components/ui/chart";
-
+import { API_URLS, APP_KEY } from '../api/config';
 // Datos estáticos para los gráficos
+
+interface DashboardData {
+  fecha_inicio: string;
+  fecha_fin: string;
+  encabezados: {
+    total_cargas: number;
+    total_venta: number;
+    litros_totales: number;
+    total_matriculas: number;
+  };
+  ventas_por_periodo: Array<{
+    fecha: string;
+    litros: number;
+    monto: number;
+  }>;
+  indicadores: {
+    ticket_promedio: number;
+    litros_por_carga: number;
+    estaciones: number;
+    matriculas: number;
+  };
+  top_estaciones: Array<{
+    estacion: string;
+    cargas: number;
+    monto: number;
+  }>;
+  combustibles: Array<{
+    nombre: string;
+    valor: number;
+    litros: number;
+  }>;
+  top_matriculas: Array<{
+    matricula: string;
+    cargas: number;
+    litros: number;
+  }>;
+}
+
 const ventasPorPeriodoData = [
   { fecha: '01 Oct', ventas: 45, monto: 12500000 },
   { fecha: '03 Oct', ventas: 52, monto: 14800000 },
@@ -53,11 +91,6 @@ const topMatriculasData = [
   { matricula: 'STU-0123', cargas: 16, litros: 800 },
 ];
 
-const comparativaMensualData = [
-  { metrica: 'Cargas', mesActual: 1267, mesAnterior: 1134 },
-  { metrica: 'Litros', mesActual: 52300, mesAnterior: 48900 },
-  { metrica: 'Monto (M)', mesActual: 143, mesAnterior: 128 },
-];
 
 // Configuraciones de gráficos
 const ventasPorPeriodoConfig = {
@@ -90,16 +123,16 @@ const combustiblesConfig = {
   },
 } satisfies ChartConfig;
 
-const comparativaMensualConfig = {
-  mesActual: {
-    label: "Mes Actual",
-    color: "hsl(var(--chart-1))",
-  },
-  mesAnterior: {
-    label: "Mes Anterior",
-    color: "hsl(var(--chart-5))",
-  },
-} satisfies ChartConfig;
+// const comparativaMensualConfig = {
+//   mesActual: {
+//     label: "Mes Actual",
+//     color: "hsl(var(--chart-1))",
+//   },
+//   mesAnterior: {
+//     label: "Mes Anterior",
+//     color: "hsl(var(--chart-5))",
+//   },
+// } satisfies ChartConfig;
 
 interface UserData {
   username: string;
@@ -108,17 +141,71 @@ interface UserData {
   name: string;
 }
 
+
+
 const DashboardCliente: React.FC = () => {
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
   const [periodo, setPeriodo] = useState<string>('30');
+  const [error, setError] = useState<string | null>(null);
+  const [empresaId, setEmpresaId] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);  // ← Cambiar de DashboardData[] a DashboardData | null
+
 
   useEffect(() => {
     const userData = getUser();
     if (userData) {
       setUser(userData);
+      setEmpresaId(userData.empresa_id);
     }
   }, []);
+
+   useEffect(() => {
+      // Solo ejecutar fetchDetalles si empresaId ya está inicializado
+      if (empresaId !== 0) {
+        fetchDashboardData();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [empresaId, periodo]);
+
+  const fetchDashboardData = async () => {
+    try {
+
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+      let url = `${API_URLS.DASHBOARD}?empresa_id=${empresaId}&cant_dias=${periodo}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-App-Key': APP_KEY
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      const apiResponse: DashboardData = await response.json();
+      setDashboardData(apiResponse);
+      setError(null);
+      console.log('Dashboard data fetched successfully:', apiResponse);
+      // console.log('Data to set in state:', apiResponse);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar los datos del dashboard de ventas');
+      console.error('Error fetching dashboard data:', err);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  console.log('Total cargas:', dashboardData?.encabezados?.total_cargas);
+   console.log('Total data:', dashboardData);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -141,13 +228,13 @@ const DashboardCliente: React.FC = () => {
                     Bienvenido {user?.name || 'Usuario'}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {new Date().toLocaleDateString('es-ES', { 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })}, {new Date().toLocaleTimeString('es-ES', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {new Date().toLocaleDateString('es-ES', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}, {new Date().toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </p>
                 </div>
@@ -179,13 +266,13 @@ const DashboardCliente: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Total Cargas</p>
-                    <h3 className="text-2xl font-bold text-gray-900">1,267</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">{dashboardData?.encabezados?.total_cargas || 0}</h3>
                     <div className="flex items-center gap-1 mt-2">
-                      <span className="text-xs font-semibold text-green-500 flex items-center">
+                      {/* <span className="text-xs font-semibold text-green-500 flex items-center">
                         <ArrowUp className="h-3 w-3" />
                         +12%
                       </span>
-                      <span className="text-xs text-gray-400">vs mes anterior</span>
+                      <span className="text-xs text-gray-400">vs mes anterior</span> */}
                     </div>
                   </div>
                   <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg">
@@ -201,7 +288,7 @@ const DashboardCliente: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Monto Total</p>
-                    <h3 className="text-2xl font-bold text-gray-900">Gs. 143M</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">{dashboardData?.encabezados?.total_venta || 0}</h3>
                     <div className="flex items-center gap-1 mt-2">
                       <span className="text-xs font-semibold text-green-500 flex items-center">
                         <ArrowUp className="h-3 w-3" />
@@ -289,12 +376,12 @@ const DashboardCliente: React.FC = () => {
                     <AreaChart data={ventasPorPeriodoData} accessibilityLayer>
                       <defs>
                         <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="colorMonto" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -342,37 +429,37 @@ const DashboardCliente: React.FC = () => {
                         <span className="text-lg font-bold text-gray-900">Gs. 112K</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" style={{width: '75%'}}></div>
+                        <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" style={{ width: '75%' }}></div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Litros/Carga</span>
                         <span className="text-lg font-bold text-gray-900">41.3 L</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full" style={{width: '60%'}}></div>
+                        <div className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full" style={{ width: '60%' }}></div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Estaciones</span>
                         <span className="text-lg font-bold text-gray-900">24</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" style={{width: '85%'}}></div>
+                        <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" style={{ width: '85%' }}></div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Vehículos</span>
                         <span className="text-lg font-bold text-gray-900">185</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" style={{width: '90%'}}></div>
+                        <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" style={{ width: '90%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -401,7 +488,7 @@ const DashboardCliente: React.FC = () => {
                       'from-orange-400 to-orange-600',
                       'from-pink-400 to-pink-600'
                     ];
-                    
+
                     return (
                       <div key={index}>
                         <div className="flex items-center justify-between mb-2">
@@ -409,9 +496,9 @@ const DashboardCliente: React.FC = () => {
                           <span className="text-sm font-bold text-gray-900">{estacion.cargas}</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className={`h-full bg-gradient-to-r ${colors[index]} rounded-full transition-all duration-500`}
-                            style={{width: `${percentage}%`}}
+                            style={{ width: `${percentage}%` }}
                           ></div>
                         </div>
                       </div>
@@ -441,8 +528,8 @@ const DashboardCliente: React.FC = () => {
                         dataKey="valor"
                       >
                         {combustiblesData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
+                          <Cell
+                            key={`cell-${index}`}
                             fill={`var(--color-${entry.nombre.replace(' ', '-')})`}
                           />
                         ))}
@@ -450,7 +537,7 @@ const DashboardCliente: React.FC = () => {
                       <ChartTooltip content={<ChartTooltipContent />} />
                     </PieChart>
                   </ChartContainer>
-                  
+
                   <div className="w-full mt-4 grid grid-cols-2 gap-3">
                     {combustiblesData.map((item, index) => {
                       const colors = [
@@ -486,7 +573,7 @@ const DashboardCliente: React.FC = () => {
                     <span className="col-span-3 text-xs font-semibold text-gray-500 text-right">Cargas</span>
                     <span className="col-span-2 text-xs font-semibold text-gray-500 text-right">Litros</span>
                   </div>
-                  
+
                   {topMatriculasData.slice(0, 7).map((vehiculo, index) => {
                     const colors = [
                       'bg-blue-500',
@@ -497,7 +584,7 @@ const DashboardCliente: React.FC = () => {
                       'bg-gray-400',
                       'bg-gray-400'
                     ];
-                    
+
                     return (
                       <div key={index} className="grid grid-cols-12 gap-2 py-2 hover:bg-gray-50 transition-colors rounded">
                         <div className="col-span-2 flex items-center">
