@@ -5,7 +5,7 @@ from .views.empresas_views import EmpresaAddView, EmpresaListView, EmpresaDeacti
 from .views.user_views import UserAddView, UserListView, UserUpdateView, UserDeactivateView
 from .views.shell_views import RegistrarVentaView, VentaListView, VentaDetalleListView
 from .views.matricula_view import MatriculaListView, MatriculaUpdateView, MatriculaAddView, MatriculaImportView
-from .views.dashboard_view import DashboardView
+from .views.dashboard_view import DashboardView, AdminDashboardView
 
 
 
@@ -39,4 +39,5 @@ urlpatterns = [
     
     # URL para dashboard
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('dashboard/admin/', AdminDashboardView.as_view(), name='dashboard-admin'),
 ]

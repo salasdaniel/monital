@@ -86,7 +86,7 @@ class RegistrarVentaView(View):
                         nro_matricula=matricula,
                         empresa=empresa,  # Vincular con la empresa si existe
                         usuario_creacion=api_user,
-                        cod_interno=None
+                        tracker_id=None
                     )
                     print(f"Matrícula creada automáticamente - Nro: {matricula}")
             
