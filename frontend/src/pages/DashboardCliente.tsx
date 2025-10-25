@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Label } from "../components/ui/label";
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
-import { TrendingDown, DollarSign, ShoppingCart, MapPin, Fuel, ArrowUp } from "lucide-react";
+import { DollarSign, ShoppingCart, MapPin, Fuel, ArrowUp } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "../components/ui/chart";
 import { API_URLS, APP_KEY } from '../api/config';
@@ -58,25 +58,6 @@ const ventasPorPeriodoConfig = {
   monto: {
     label: "Monto (₲)",
     color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig;
-
-const combustiblesConfig = {
-  "Diesel B5": {
-    label: "Diesel B5",
-    color: "hsl(var(--chart-1))",
-  },
-  "Gasolina 95": {
-    label: "Gasolina 95",
-    color: "hsl(var(--chart-2))",
-  },
-  "Gasolina 97": {
-    label: "Gasolina 97",
-    color: "hsl(var(--chart-3))",
-  },
-  "GLP": {
-    label: "GLP",
-    color: "hsl(var(--chart-4))",
   },
 } satisfies ChartConfig;
 
@@ -136,19 +117,14 @@ const DashboardCliente: React.FC = () => {
       const apiResponse: DashboardData = await response.json();
       setDashboardData(apiResponse);
       setError(null);
-      console.log('Dashboard data fetched successfully:', apiResponse);
-      // console.log('Data to set in state:', apiResponse);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar los datos del dashboard de ventas');
-      console.error('Error fetching dashboard data:', err);
+ 
     }finally{
       setLoading(false);
     }
   }
-
-  console.log('Total cargas:', dashboardData?.encabezados?.total_cargas);
-   console.log('Total data:', dashboardData);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -192,8 +168,7 @@ const DashboardCliente: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="7">Últimos 7 días</SelectItem>
                       <SelectItem value="30">Últimos 30 días</SelectItem>
-                      <SelectItem value="90">Últimos 3 meses</SelectItem>
-                      <SelectItem value="180">Últimos 6 meses</SelectItem>
+                      <SelectItem value="60">Últimos 60 días</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -201,7 +176,25 @@ const DashboardCliente: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Indicador de Carga */}
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Cargando datos...</span>
+            </div>
+          )}
+
+          {/* Mensaje de Error */}
+          {error && !loading && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <p className="font-semibold">Error al cargar los datos:</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
+
           {/* KPIs Cards - Estilo Horizon UI */}
+          {!loading && dashboardData && (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
             {/* Total Ventas */}
             <Card className="border-0 shadow-sm">
@@ -294,13 +287,13 @@ const DashboardCliente: React.FC = () => {
                         Evolución de ventas en los últimos {periodo} días
                       </CardDescription>
                     </div>
-                    <div className="text-right">
+                    {/* <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">Gs. 143M</p>
                       <p className="text-sm text-green-500 font-semibold flex items-center justify-end gap-1">
                         <ArrowUp className="h-4 w-4" />
                         +8.2%
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </CardHeader>
                 <CardContent className="pb-4">
@@ -458,45 +451,68 @@ const DashboardCliente: React.FC = () => {
               </CardHeader>
               <CardContent className="pb-4">
                 <div className="flex flex-col items-center">
-                  <ChartContainer config={combustiblesConfig} className="h-[180px] w-full">
-                    <PieChart accessibilityLayer>
-                      <Pie
-                        data={dashboardData?.combustibles || []}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={3}
-                        dataKey="valor"
-                      >
-                        {(dashboardData?.combustibles || []).map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={`var(--color-${entry.nombre.replace(' ', '-')})`}
-                          />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
-                  </ChartContainer>
+                  {(() => {
+                    // Generar configuración dinámica basada en los combustibles de la API
+                    const combustibles = dashboardData?.combustibles || [];
+                    const dynamicConfig: ChartConfig = {};
+                    const chartColors = [
+                      'hsl(var(--chart-1))', // Azul
+                      'hsl(var(--chart-2))', // Verde
+                      'hsl(var(--chart-3))', // Naranja
+                      'hsl(var(--chart-4))', // Morado
+                      'hsl(var(--chart-5))', // Rosa
+                    ];
+                    const tailwindColors = [
+                      'bg-blue-500',
+                      'bg-green-500',
+                      'bg-orange-500',
+                      'bg-purple-500',
+                      'bg-pink-500'
+                    ];
 
-                  <div className="w-full mt-4 grid grid-cols-2 gap-3">
-                    {(dashboardData?.combustibles || []).map((item, index) => {
-                      const colors = [
-                        'bg-blue-500',
-                        'bg-green-500',
-                        'bg-orange-500',
-                        'bg-purple-500'
-                      ];
-                      return (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-sm ${colors[index]}`}></div>
-                          <span className="text-xs text-gray-600">{item.nombre}</span>
-                          <span className="text-xs font-bold text-gray-900 ml-auto">{item.valor.toFixed(1)}%</span>
+                    combustibles.forEach((combustible, index) => {
+                      dynamicConfig[combustible.nombre] = {
+                        label: combustible.nombre,
+                        color: chartColors[index % chartColors.length],
+                      };
+                    });
+
+                    return (
+                      <>
+                        <ChartContainer config={dynamicConfig} className="h-[180px] w-full">
+                          <PieChart accessibilityLayer>
+                            <Pie
+                              data={combustibles}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={3}
+                              dataKey="valor"
+                            >
+                              {combustibles.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={chartColors[index % chartColors.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ChartContainer>
+
+                        <div className="w-full mt-4 grid grid-cols-2 gap-3">
+                          {combustibles.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-sm ${tailwindColors[index % tailwindColors.length]}`}></div>
+                              <span className="text-xs text-gray-600">{item.nombre}</span>
+                              <span className="text-xs font-bold text-gray-900 ml-auto">{item.valor.toFixed(1)}%</span>
+                            </div>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -581,75 +597,79 @@ const DashboardCliente: React.FC = () => {
                     <tr className="border-b border-gray-200">
                       <th className="text-left px-4 py-3 text-gray-700 font-semibold">Indicador</th>
                       <th className="text-right px-4 py-3 text-gray-700 font-semibold">Valor</th>
-                      <th className="text-right px-4 py-3 text-gray-700 font-semibold">Variación</th>
+                      {/* <th className="text-right px-4 py-3 text-gray-700 font-semibold">Variación</th> */}
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Total de Cargas</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">1,267</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +12%
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        {dashboardData?.encabezados?.total_cargas 
+                          ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.total_cargas) 
+                          : '0'}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Litros Totales</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">52,300</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +7%
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        {dashboardData?.encabezados?.litros_totales 
+                          ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.litros_totales) 
+                          : '0'}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Monto Total</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">Gs. 143M</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +8%
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        ₲{dashboardData?.encabezados?.total_venta 
+                          ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.total_venta) 
+                          : '0'}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Promedio por Carga (litros)</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">41.3</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-red-600 font-semibold flex items-center justify-end gap-1">
-                          <TrendingDown className="h-3 w-3" />
-                          -3%
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        {dashboardData?.indicadores?.litros_por_carga?.toFixed(1) || '0'}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Ticket Promedio</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">Gs. 112,893</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +5%
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        ₲{dashboardData?.indicadores?.ticket_promedio 
+                          ? new Intl.NumberFormat('es-PY').format(dashboardData.indicadores.ticket_promedio) 
+                          : '0'}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                     <tr className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">Estaciones Utilizadas</td>
-                      <td className="text-right px-4 py-3 font-bold text-gray-900">24</td>
-                      <td className="text-right px-4 py-3">
-                        <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +2
-                        </span>
+                      <td className="text-right px-4 py-3 font-bold text-gray-900">
+                        {dashboardData?.indicadores?.estaciones || 0}
                       </td>
+                      {/* <td className="text-right px-4 py-3">
+                        <span className="text-gray-400 text-sm">-</span>
+                      </td> */}
                     </tr>
                   </tbody>
                 </table>
               </div>
             </CardContent>
           </Card>
+          </>
+          )}
         </main>
       </div>
     </div>
