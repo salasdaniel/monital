@@ -23,6 +23,7 @@ const API_CONFIG = {
     UPDATE_MATRICULAS: (id: number) => `/api/matriculas/update/${id}/`,
     IMPORT_MATRICULAS: '/api/matriculas/import/',
     DASHBOARD: '/api/dashboard/',
+    PANEL: '/api/panel-control/',
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
@@ -53,6 +54,7 @@ export const API_URLS = {
   UPDATE_MATRICULAS: (id: number) => getApiUrl(API_CONFIG.ENDPOINTS.UPDATE_MATRICULAS(id)),
   IMPORT_MATRICULAS: getApiUrl(API_CONFIG.ENDPOINTS.IMPORT_MATRICULAS),
   DASHBOARD: getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD),
+  PANEL: getApiUrl(API_CONFIG.ENDPOINTS.PANEL),
 };
 
 export const APP_KEY = API_CONFIG.APP_KEY;

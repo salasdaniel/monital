@@ -11,7 +11,8 @@ import {
   Users,
   Coins,
   ChartColumnIncreasing,
-  Car
+  Car,
+  SlidersHorizontal
 } from 'lucide-react';
 
 
@@ -47,6 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Definir menús basados en roles
   const menuItems: MenuItem[] = [
+    {
+      id: 'panel',
+      label: 'Panel de Control',
+      icon: <SlidersHorizontal className="h-5 w-5" />,
+      href: '/panel-control',
+      roles: ['admin']
+    },
     {
       id: 'dashboard',
       label: 'Dashboard',
@@ -89,6 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/matriculas',
       roles: ['admin', 'user', 'moderator']
     },
+    
   ];
 
   // Filtrar menús según el rol del usuario

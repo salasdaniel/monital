@@ -17,7 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route 
-          path="/dashboard" 
+          path="/panel-control" 
           element={
             <ProtectedRoute>
               <Dashboard />
@@ -65,7 +65,7 @@ function App() {
           } 
         />
         <Route 
-          path="/dashboard-clientes" 
+          path="/dashboard" 
           element={
             <ProtectedRoute>
               <DashboardCliente />
