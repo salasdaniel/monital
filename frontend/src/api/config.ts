@@ -23,7 +23,7 @@ const API_CONFIG = {
     UPDATE_MATRICULAS: (id: number) => `/api/matriculas/update/${id}/`,
     IMPORT_MATRICULAS: '/api/matriculas/import/',
     DASHBOARD: '/api/dashboard/',
-    PANEL: '/api/panel-control/',
+    PANEL: '/api/dashboard/admin/',
     // Aquí puedes agregar más endpoints según sea necesario
   }
 };
