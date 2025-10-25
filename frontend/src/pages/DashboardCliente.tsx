@@ -49,57 +49,14 @@ interface DashboardData {
   }>;
 }
 
-const ventasPorPeriodoData = [
-  { fecha: '01 Oct', ventas: 45, monto: 12500000 },
-  { fecha: '03 Oct', ventas: 52, monto: 14800000 },
-  { fecha: '05 Oct', ventas: 48, monto: 13200000 },
-  { fecha: '07 Oct', ventas: 61, monto: 16500000 },
-  { fecha: '09 Oct', ventas: 55, monto: 15100000 },
-  { fecha: '11 Oct', ventas: 67, monto: 18300000 },
-  { fecha: '13 Oct', ventas: 58, monto: 15900000 },
-  { fecha: '15 Oct', ventas: 72, monto: 19800000 },
-  { fecha: '17 Oct', ventas: 65, monto: 17600000 },
-  { fecha: '19 Oct', ventas: 78, monto: 21200000 },
-];
-
-const ventasPorEstacionData = [
-  { estacion: 'Shell San Isidro', cargas: 234, monto: 64200000 },
-  { estacion: 'Copetrol Mcal. López', cargas: 198, monto: 54300000 },
-  { estacion: 'Petrobras Aviadores', cargas: 187, monto: 51200000 },
-  { estacion: 'Shell Villa Morra', cargas: 165, monto: 45300000 },
-  { estacion: 'Copetrol Madame Lynch', cargas: 142, monto: 38900000 },
-  { estacion: 'Esso San Lorenzo', cargas: 128, monto: 35100000 },
-  { estacion: 'Petrobras Trinidad', cargas: 115, monto: 31500000 },
-  { estacion: 'Shell Luque', cargas: 98, monto: 26800000 },
-];
-
-const combustiblesData = [
-  { nombre: 'Diesel B5', valor: 45, litros: 18500 },
-  { nombre: 'Gasolina 95', valor: 30, litros: 12300 },
-  { nombre: 'Gasolina 97', valor: 15, litros: 6200 },
-  { nombre: 'GLP', valor: 10, litros: 4100 },
-];
-
-const topMatriculasData = [
-  { matricula: 'ABC-1234', cargas: 45, litros: 2250 },
-  { matricula: 'XYZ-5678', cargas: 38, litros: 1900 },
-  { matricula: 'DEF-9012', cargas: 32, litros: 1600 },
-  { matricula: 'GHI-3456', cargas: 28, litros: 1400 },
-  { matricula: 'JKL-7890', cargas: 25, litros: 1250 },
-  { matricula: 'MNO-2345', cargas: 22, litros: 1100 },
-  { matricula: 'PQR-6789', cargas: 19, litros: 950 },
-  { matricula: 'STU-0123', cargas: 16, litros: 800 },
-];
-
-
 // Configuraciones de gráficos
 const ventasPorPeriodoConfig = {
-  ventas: {
-    label: "Cantidad de Ventas",
+  litros: {
+    label: "Litros",
     color: "hsl(var(--chart-1))",
   },
   monto: {
-    label: "Monto (Gs.)",
+    label: "Monto (₲)",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig;
@@ -123,26 +80,12 @@ const combustiblesConfig = {
   },
 } satisfies ChartConfig;
 
-// const comparativaMensualConfig = {
-//   mesActual: {
-//     label: "Mes Actual",
-//     color: "hsl(var(--chart-1))",
-//   },
-//   mesAnterior: {
-//     label: "Mes Anterior",
-//     color: "hsl(var(--chart-5))",
-//   },
-// } satisfies ChartConfig;
-
 interface UserData {
   username: string;
   role: string;
   empresa_id?: number;
   name: string;
 }
-
-
-
 const DashboardCliente: React.FC = () => {
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
@@ -288,14 +231,11 @@ const DashboardCliente: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Monto Total</p>
-                    <h3 className="text-2xl font-bold text-gray-900">{dashboardData?.encabezados?.total_venta || 0}</h3>
-                    <div className="flex items-center gap-1 mt-2">
-                      <span className="text-xs font-semibold text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3" />
-                        +8%
-                      </span>
-                      <span className="text-xs text-gray-400">vs mes anterior</span>
-                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      ₲{dashboardData?.encabezados?.total_venta 
+                        ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.total_venta) 
+                        : '0'}
+                    </h3>
                   </div>
                   <div className="h-14 w-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg">
                     <DollarSign className="h-7 w-7 text-white" />
@@ -310,14 +250,11 @@ const DashboardCliente: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Litros Totales</p>
-                    <h3 className="text-2xl font-bold text-gray-900">52,300</h3>
-                    <div className="flex items-center gap-1 mt-2">
-                      <span className="text-xs font-semibold text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3" />
-                        +7%
-                      </span>
-                      <span className="text-xs text-gray-400">vs mes anterior</span>
-                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {dashboardData?.encabezados?.litros_totales 
+                        ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.litros_totales) 
+                        : '0'} L
+                    </h3>
                   </div>
                   <div className="h-14 w-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg">
                     <Fuel className="h-7 w-7 text-white" />
@@ -332,14 +269,9 @@ const DashboardCliente: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Matriculas</p>
-                    <h3 className="text-2xl font-bold text-gray-900">24</h3>
-                    <div className="flex items-center gap-1 mt-2">
-                      <span className="text-xs font-semibold text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3" />
-                        +2
-                      </span>
-                      <span className="text-xs text-gray-400">este mes</span>
-                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {dashboardData?.encabezados?.total_matriculas || 0}
+                    </h3>
                   </div>
                   <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
                     <MapPin className="h-7 w-7 text-white" />
@@ -373,7 +305,7 @@ const DashboardCliente: React.FC = () => {
                 </CardHeader>
                 <CardContent className="pb-4">
                   <ChartContainer config={ventasPorPeriodoConfig} className="h-[280px] w-full">
-                    <AreaChart data={ventasPorPeriodoData} accessibilityLayer>
+                    <AreaChart data={dashboardData?.ventas_por_periodo || []} accessibilityLayer>
                       <defs>
                         <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
@@ -393,7 +325,7 @@ const DashboardCliente: React.FC = () => {
                       <Area
                         yAxisId="left"
                         type="monotone"
-                        dataKey="ventas"
+                        dataKey="litros"
                         stroke="hsl(var(--chart-1))"
                         strokeWidth={3}
                         fillOpacity={1}
@@ -426,7 +358,11 @@ const DashboardCliente: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Ticket Promedio</span>
-                        <span className="text-lg font-bold text-gray-900">Gs. 112K</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          ₲{dashboardData?.indicadores?.ticket_promedio 
+                            ? new Intl.NumberFormat('es-PY').format(dashboardData.indicadores.ticket_promedio) 
+                            : '0'}
+                        </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" style={{ width: '75%' }}></div>
@@ -436,7 +372,9 @@ const DashboardCliente: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Litros/Carga</span>
-                        <span className="text-lg font-bold text-gray-900">41.3 L</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          {dashboardData?.indicadores?.litros_por_carga?.toFixed(1) || '0'} L
+                        </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full" style={{ width: '60%' }}></div>
@@ -446,7 +384,9 @@ const DashboardCliente: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Estaciones</span>
-                        <span className="text-lg font-bold text-gray-900">24</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          {dashboardData?.indicadores?.estaciones || 0}
+                        </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" style={{ width: '85%' }}></div>
@@ -456,7 +396,9 @@ const DashboardCliente: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Vehículos</span>
-                        <span className="text-lg font-bold text-gray-900">185</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          {dashboardData?.indicadores?.matriculas || 0}
+                        </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" style={{ width: '90%' }}></div>
@@ -478,8 +420,8 @@ const DashboardCliente: React.FC = () => {
               </CardHeader>
               <CardContent className="pb-4">
                 <div className="space-y-5">
-                  {ventasPorEstacionData.slice(0, 5).map((estacion, index) => {
-                    const maxCargas = ventasPorEstacionData[0].cargas;
+                  {(dashboardData?.top_estaciones || []).slice(0, 5).map((estacion, index) => {
+                    const maxCargas = dashboardData?.top_estaciones?.[0]?.cargas || 1;
                     const percentage = (estacion.cargas / maxCargas) * 100;
                     const colors = [
                       'from-blue-400 to-blue-600',
@@ -519,7 +461,7 @@ const DashboardCliente: React.FC = () => {
                   <ChartContainer config={combustiblesConfig} className="h-[180px] w-full">
                     <PieChart accessibilityLayer>
                       <Pie
-                        data={combustiblesData}
+                        data={dashboardData?.combustibles || []}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -527,7 +469,7 @@ const DashboardCliente: React.FC = () => {
                         paddingAngle={3}
                         dataKey="valor"
                       >
-                        {combustiblesData.map((entry, index) => (
+                        {(dashboardData?.combustibles || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={`var(--color-${entry.nombre.replace(' ', '-')})`}
@@ -539,7 +481,7 @@ const DashboardCliente: React.FC = () => {
                   </ChartContainer>
 
                   <div className="w-full mt-4 grid grid-cols-2 gap-3">
-                    {combustiblesData.map((item, index) => {
+                    {(dashboardData?.combustibles || []).map((item, index) => {
                       const colors = [
                         'bg-blue-500',
                         'bg-green-500',
@@ -550,7 +492,7 @@ const DashboardCliente: React.FC = () => {
                         <div key={index} className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-sm ${colors[index]}`}></div>
                           <span className="text-xs text-gray-600">{item.nombre}</span>
-                          <span className="text-xs font-bold text-gray-900 ml-auto">{item.valor}%</span>
+                          <span className="text-xs font-bold text-gray-900 ml-auto">{item.valor.toFixed(1)}%</span>
                         </div>
                       );
                     })}
@@ -574,7 +516,7 @@ const DashboardCliente: React.FC = () => {
                     <span className="col-span-2 text-xs font-semibold text-gray-500 text-right">Litros</span>
                   </div>
 
-                  {topMatriculasData.slice(0, 7).map((vehiculo, index) => {
+                  {(dashboardData?.top_matriculas || []).slice(0, 7).map((vehiculo, index) => {
                     const colors = [
                       'bg-blue-500',
                       'bg-purple-500',
