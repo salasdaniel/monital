@@ -124,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={cn(
-      "bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ease-in-out flex flex-col",
+      "bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ease-in-out flex flex-col fixed left-0 top-0 h-screen z-40",
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Header */}

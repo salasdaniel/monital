@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Building2, Users, Fuel, ShoppingCart, TrendingUp, AlertCircle } from 'lucide-react';
+import { Building2, Users, Fuel, ShoppingCart, TrendingUp, AlertCircle, Home, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from 'lucide-react';
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
@@ -57,7 +57,7 @@ interface DashboardAdminData {
 }
 
 const Dashboard: React.FC = () => {
-  //   const navigate = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
 
@@ -138,13 +138,26 @@ const Dashboard: React.FC = () => {
     }).format(amount);
   };
 
+  // Menú de navegación inferior para móviles (solo admin)
+  const bottomNavItems = [
+    { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: Building2, label: 'Empresas', path: '/empresas' },
+    { icon: Users, label: 'Usuarios', path: '/users' },
+    { icon: Coins, label: 'Ventas', path: '/ventas' },
+    { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+    { icon: Car, label: 'Matrículas', path: '/matriculas' },
+  ];
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar userRole={user?.role ?? 'user'} currentPath={location.pathname} />
-        <div className="flex-1 flex flex-col">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar userRole={user?.role ?? 'user'} currentPath={location.pathname} />
+        </div>
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Dashboard Admin" subtitle="Panel de Control del Sistema" />
-          <main className="flex-1 p-6 flex items-center justify-center">
+          <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-4 text-gray-600">Cargando datos del sistema...</p>
@@ -157,11 +170,13 @@ const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar userRole={user?.role ?? 'user'} currentPath={location.pathname} />
-        <div className="flex-1 flex flex-col">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar userRole={user?.role ?? 'user'} currentPath={location.pathname} />
+        </div>
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Dashboard Admin" subtitle="Panel de Control del Sistema" />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-6">
             <Card className="border-red-200 bg-red-50">
               <CardHeader>
                 <CardTitle className="text-red-600 flex items-center gap-2">
@@ -182,15 +197,17 @@ const Dashboard: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <Sidebar
-        userRole={user?.role ?? 'user'}
-        currentPath={location.pathname}
-      />
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar - Oculto en móviles, Fixed en desktop */}
+      <div className="hidden md:block">
+        <Sidebar
+          userRole={user?.role ?? 'user'}
+          currentPath={location.pathname}
+        />
+      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content - Con margen izquierdo para el sidebar en desktop */}
+      <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
         {/* Header */}
         <Header
           title="Dashboard Admin"
@@ -198,15 +215,15 @@ const Dashboard: React.FC = () => {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
+        <main className="flex-1 p-4 md:p-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Filtros */}
             <Card className="shadow-md border-gray-200">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 md:pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800">{getWelcomeMessage()}</h2>
-                    <p className="text-gray-500">
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-800">{getWelcomeMessage()}</h2>
+                    <p className="text-xs md:text-sm text-gray-500">
                       {dashboardData && `Dashboard del Sistema - Actualizado al ${new Date(dashboardData.fecha_fin).toLocaleDateString('es-ES')}`}
                     </p>
                   </div>
@@ -215,7 +232,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* KPIs del Sistema - 4 Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {/* Empresas */}
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -367,7 +384,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Top 5 Empresas - 3 columnas */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* Top 5 por Usuarios */}
               <Card className="shadow-md">
                 <CardHeader>
@@ -493,6 +510,28 @@ const Dashboard: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Barra de navegación inferior - Solo en móviles */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max">
+            {bottomNavItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex flex-col items-center justify-center space-y-1 px-4 py-2 min-w-[80px] h-16 ${
+                  location.pathname === item.path
+                    ? 'text-blue-600 bg-blue-50 border-t-2 border-blue-600'
+                    : 'text-gray-600'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-xs font-medium whitespace-nowrap">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
     </div>
   );
 };

@@ -38,30 +38,35 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="px-6 py-4">
+      <div className="px-4 md:px-6 py-3 md:py-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            <p className="text-sm text-gray-500">{subtitle}</p>
+            <h1 className="text-lg md:text-2xl font-bold text-gray-900">{title}</h1>
+            <p className="text-xs md:text-sm text-gray-500 hidden sm:block">{subtitle}</p>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               <User className="h-5 w-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">
                 {user?.name + ' ' + user?.last_name || 'Usuario'}
-                
               </span>
-
             </div>
+            
+            {/* Usuario en móvil - solo iniciales */}
+            <div className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-sm">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            
             <Button 
               variant="outline" 
               size="sm"
               onClick={handleLogout}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 md:space-x-2"
             >
               <LogOut className="h-4 w-4" />
-              <span>Cerrar Sesión</span>
+              <span className="hidden sm:inline">Cerrar Sesión</span>
+              <span className="sm:hidden">Salir</span>
             </Button>
           </div>
         </div>
