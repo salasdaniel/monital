@@ -83,7 +83,13 @@ const LoginPage: React.FC = () => {
 
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      
+      // Redirigir según el rol del usuario
+      if (data.user.role === 'admin') {
+        navigate('/panel-control');
+      } else {
+        navigate('/dashboard');
+      }
      
 
     } catch (error) {

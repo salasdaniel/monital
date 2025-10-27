@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
-import { Label } from "../components/ui/label";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
 import { Building2, Users, Fuel, ShoppingCart, TrendingUp, AlertCircle } from 'lucide-react';
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../components/ui/chart";
-import { PieChart, Pie, Cell } from 'recharts';
 
 interface UserData {
   username: string;
@@ -17,7 +13,7 @@ interface UserData {
 }
 
 interface DashboardAdminData {
-  fecha_inicio: string;
+  fecha_inicio: string | null;
   fecha_fin: string;
   kpis_sistema: {
     total_empresas: number;
@@ -44,13 +40,19 @@ interface DashboardAdminData {
     ultima_carga: string | null;
   }>;
   resumen_uso_plataforma: {
-    tasa_actividad_empresas: number;
-    tasa_actividad_usuarios: number;
-    promedio_usuarios_por_empresa: number;
-    promedio_matriculas_por_empresa: number;
-    promedio_cargas_por_empresa: number;
-    empresas_nuevas_periodo: number;
-    empresas_inactivadas_periodo: number;
+    total_cargas_mes: number;
+    total_usuarios_nuevos_mes: number;
+    total_matriculas_nuevas_mes: number;
+    total_empresas_nuevas_mes: number;
+    combustible_mas_cargado: {
+      nombre: string;
+      litros: number;
+    };
+    estacion_mas_frecuentada: {
+      nombre: string;
+      cargas: number;
+    };
+    monto_total_mes: number;
   };
 }
 
@@ -59,14 +61,9 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
 
-  const [periodo, setPeriodo] = useState<string>('30');
   const [error, setError] = useState<string | null>(null);
-  // const [empresaId, setEmpresaId] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardAdminData | null>(null);
-  // const [empresas, setEmpresas] = useState<Array<{ id: number; razon_social: string; ruc: string }>>([]);
-  // const [empresaSeleccionada, setEmpresaSeleccionada] = useState<string>('');
-  // const [openCombobox, setOpenCombobox] = useState(false);
 
 
   useEffect(() => {
@@ -80,7 +77,7 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      let url = `${API_URLS.PANEL}?cant_dias=${periodo}`;
+      const url = API_URLS.PANEL; // Ya no se envía cant_dias
       
       const response = await fetch(url, {
         method: 'GET',
@@ -106,7 +103,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [periodo]); // ← Agregar periodo como dependencia
+  }, []); // Sin dependencia de periodo
 
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -210,25 +207,8 @@ const Dashboard: React.FC = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800">{getWelcomeMessage()}</h2>
                     <p className="text-gray-500">
-                      {dashboardData && `Período: ${new Date(dashboardData.fecha_inicio).toLocaleDateString('es-ES')} - ${new Date(dashboardData.fecha_fin).toLocaleDateString('es-ES')}`}
+                      {dashboardData && `Dashboard del Sistema - Actualizado al ${new Date(dashboardData.fecha_fin).toLocaleDateString('es-ES')}`}
                     </p>
-                  </div>
-
-                  {/* Selector de Período */}
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm font-semibold text-gray-700">Período:</Label>
-                    <Select value={periodo} onValueChange={setPeriodo}>
-                      <SelectTrigger className="w-[180px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7">Últimos 7 días</SelectItem>
-                        <SelectItem value="15">Últimos 15 días</SelectItem>
-                        <SelectItem value="30">Últimos 30 días</SelectItem>
-                        <SelectItem value="60">Últimos 60 días</SelectItem>
-                        <SelectItem value="90">Últimos 90 días</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
               </CardContent>
@@ -266,7 +246,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-sm font-medium text-gray-600">
                     Usuarios del Sistema
                   </CardTitle>
-                  <Users className="h-5 w-5 text-purple-600" />
+                  <Users className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-gray-900">
@@ -290,7 +270,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-sm font-medium text-gray-600">
                     Matrículas Totales
                   </CardTitle>
-                  <Fuel className="h-5 w-5 text-orange-600" />
+                  <Fuel className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-gray-900">
@@ -306,16 +286,16 @@ const Dashboard: React.FC = () => {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                   <CardTitle className="text-sm font-medium text-gray-600">
-                    Cargas del Período
+                    Cargas Totales
                   </CardTitle>
-                  <ShoppingCart className="h-5 w-5 text-green-600" />
+                  <ShoppingCart className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-gray-900">
                     {formatNumber(dashboardData?.kpis_sistema.total_cargas_sistema || 0)}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Transacciones realizadas
+                    Transacciones históricas
                   </p>
                 </CardContent>
               </Card>
@@ -326,54 +306,60 @@ const Dashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-blue-600" />
-                  Resumen de Uso de la Plataforma
+                  Resumen del Mes Actual
                 </CardTitle>
-                <CardDescription>Métricas generales del sistema</CardDescription>
+                <CardDescription>Métricas del mes en curso</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Tasa Actividad Empresas</p>
+                    <p className="text-sm text-gray-600 mb-1">Total Cargas Mes</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {dashboardData?.resumen_uso_plataforma.tasa_actividad_empresas.toFixed(1)}%
+                      {formatNumber(dashboardData?.resumen_uso_plataforma.total_cargas_mes || 0)}
                     </p>
                   </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Tasa Actividad Usuarios</p>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {dashboardData?.resumen_uso_plataforma.tasa_actividad_usuarios.toFixed(1)}%
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Usuarios Nuevos Mes</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      +{dashboardData?.resumen_uso_plataforma.total_usuarios_nuevos_mes || 0}
                     </p>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Promedio Usuarios/Empresa</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {dashboardData?.resumen_uso_plataforma.promedio_usuarios_por_empresa.toFixed(0)}
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Matrículas Nuevas Mes</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      +{dashboardData?.resumen_uso_plataforma.total_matriculas_nuevas_mes || 0}
                     </p>
                   </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Promedio Matrículas/Empresa</p>
-                    <p className="text-2xl font-bold text-orange-600">
-                      {dashboardData?.resumen_uso_plataforma.promedio_matriculas_por_empresa.toFixed(0)}
-                    </p>
-                  </div>
-                  <div className="text-center p-4 bg-pink-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Promedio Cargas/Empresa</p>
-                    <p className="text-2xl font-bold text-pink-600">
-                      {dashboardData?.resumen_uso_plataforma.promedio_cargas_por_empresa.toFixed(1)}
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Empresas Nuevas Mes</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      +{dashboardData?.resumen_uso_plataforma.total_empresas_nuevas_mes || 0}
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="text-center p-4 bg-indigo-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Empresas Nuevas (Período)</p>
-                    <p className="text-2xl font-bold text-indigo-600">
-                      +{dashboardData?.resumen_uso_plataforma.empresas_nuevas_periodo}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Combustible Más Cargado</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {dashboardData?.resumen_uso_plataforma.combustible_mas_cargado.nombre || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatNumber(dashboardData?.resumen_uso_plataforma.combustible_mas_cargado.litros || 0)} litros
                     </p>
                   </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Empresas Inactivadas (Período)</p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {dashboardData?.resumen_uso_plataforma.empresas_inactivadas_periodo}
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Estación Más Frecuentada</p>
+                    <p className="text-xl font-bold text-blue-600 truncate">
+                      {dashboardData?.resumen_uso_plataforma.estacion_mas_frecuentada.nombre || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatNumber(dashboardData?.resumen_uso_plataforma.estacion_mas_frecuentada.cargas || 0)} cargas
+                    </p>
+                  </div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Monto Total Mes</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {formatCurrency(dashboardData?.resumen_uso_plataforma.monto_total_mes || 0)}
                     </p>
                   </div>
                 </div>
@@ -431,7 +417,7 @@ const Dashboard: React.FC = () => {
                             <p className="text-xs text-gray-500">{empresa.ruc}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-orange-600">{empresa.total_matriculas}</p>
+                            <p className="text-sm font-bold text-blue-600">{empresa.total_matriculas}</p>
                             <p className="text-xs text-gray-500">matrículas</p>
                           </div>
                         </div>
@@ -462,7 +448,7 @@ const Dashboard: React.FC = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-green-600">{empresa.total_cargas}</p>
+                            <p className="text-sm font-bold text-blue-600">{empresa.total_cargas}</p>
                             <p className="text-xs text-gray-500">cargas</p>
                           </div>
                         </div>
@@ -474,9 +460,9 @@ const Dashboard: React.FC = () => {
 
             {/* Empresas Sin Actividad */}
             {dashboardData && dashboardData.metricas_por_empresa.filter(e => e.dias_inactiva !== null && e.dias_inactiva > 30).length > 0 && (
-              <Card className="shadow-md border-yellow-200 bg-yellow-50">
+              <Card className="shadow-md border-blue-200 bg-blue-50">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-yellow-800">
+                  <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
                     <AlertCircle className="h-5 w-5" />
                     Alertas: Empresas Sin Actividad (+30 días)
                   </CardTitle>
@@ -493,7 +479,7 @@ const Dashboard: React.FC = () => {
                             <p className="text-xs text-gray-500">{empresa.ruc}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-yellow-700">{empresa.dias_inactiva} días</p>
+                            <p className="text-sm font-bold text-blue-700">{empresa.dias_inactiva} días</p>
                             <p className="text-xs text-gray-500">
                               Última carga: {empresa.ultima_carga ? new Date(empresa.ultima_carga).toLocaleDateString('es-ES') : 'N/A'}
                             </p>

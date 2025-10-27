@@ -213,37 +213,18 @@ class AdminDashboardView(View):
                 status=403
             )
 
-        # Obtener parámetro de días (obligatorio)
-        cant_dias = request.GET.get('cant_dias')
-
-        if not cant_dias:
-            return JsonResponse(
-                {'error': 'El parámetro cant_dias es obligatorio'},
-                status=400
-            )
-
-        try:
-            cant_dias = int(cant_dias)
-        except ValueError:
-            return JsonResponse(
-                {'error': 'cant_dias debe ser un número entero'},
-                status=400
-            )
-
-        # Calcular fechas
+        # Calcular fechas - Todo desde el inicio del sistema hasta ahora
         fecha_fin = timezone.now().date()
-        fecha_inicio = fecha_fin - timedelta(days=cant_dias - 1)
+        # No hay fecha_inicio, traemos todo desde el principio
+        
+        # Calcular el primer día del mes actual para las métricas del mes
+        primer_dia_mes = fecha_fin.replace(day=1)
 
         # 1. KPIs del Sistema
         total_empresas = Empresa.objects.count()
         
-        # Empresas con al menos una carga en el período
-        empresas_activas_ids = Venta.objects.filter(
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).values('empresa_id').distinct()
-        
-        empresas_activas = empresas_activas_ids.count()
+        # Empresas con al menos una carga (históricamente)
+        empresas_activas = Venta.objects.values('empresa_id').distinct().count()
         empresas_inactivas = total_empresas - empresas_activas
 
         # Total de usuarios
@@ -256,11 +237,8 @@ class AdminDashboardView(View):
         # Total de matrículas en el sistema
         total_matriculas_sistema = Matricula.objects.count()
 
-        # Total de cargas en el período
-        total_cargas_sistema = Venta.objects.filter(
-            fecha__date__gte=fecha_inicio,
-            fecha__date__lte=fecha_fin
-        ).count()
+        # Total de cargas (todo el historial)
+        total_cargas_sistema = Venta.objects.count()
 
         kpis_sistema = {
             'total_empresas': total_empresas,
@@ -290,12 +268,8 @@ class AdminDashboardView(View):
             # Matrículas de la empresa
             total_matriculas_empresa = Matricula.objects.filter(empresa_id=empresa.id).count()
 
-            # Cargas de la empresa en el período
-            cargas_empresa = Venta.objects.filter(
-                empresa_id=empresa.id,
-                fecha__date__gte=fecha_inicio,
-                fecha__date__lte=fecha_fin
-            )
+            # Cargas de la empresa (todo el historial)
+            cargas_empresa = Venta.objects.filter(empresa_id=empresa.id)
             
             total_cargas_empresa = cargas_empresa.count()
             
@@ -324,51 +298,72 @@ class AdminDashboardView(View):
                 'ultima_carga': ultima_carga
             })
 
-        # 3. Resumen de Uso de la Plataforma
-        tasa_actividad_empresas = round((empresas_activas / total_empresas * 100), 1) if total_empresas > 0 else 0
-        tasa_actividad_usuarios = round((usuarios_activos / total_usuarios * 100), 1) if total_usuarios > 0 else 0
-        promedio_usuarios_por_empresa = round((total_usuarios / total_empresas), 1) if total_empresas > 0 else 0
-        promedio_matriculas_por_empresa = round((total_matriculas_sistema / total_empresas), 1) if total_empresas > 0 else 0
-        promedio_cargas_por_empresa = round((total_cargas_sistema / empresas_activas), 1) if empresas_activas > 0 else 0
+        # 3. Resumen de Uso de la Plataforma (Métricas del Mes Actual)
+        
+        # Total cargas del mes actual
+        total_cargas_mes = Venta.objects.filter(
+            fecha__date__gte=primer_dia_mes,
+            fecha__date__lte=fecha_fin
+        ).count()
 
-        # Empresas nuevas y inactivadas en el período
-        empresas_nuevas_periodo = Empresa.objects.filter(
-            created_at__date__gte=fecha_inicio,
+        # Total usuarios nuevos del mes
+        total_usuarios_nuevos_mes = User.objects.filter(
+            created_at__date__gte=primer_dia_mes,
             created_at__date__lte=fecha_fin
         ).count()
 
-        # Empresas que estaban activas en período anterior pero no en este
-        fecha_inicio_anterior = fecha_inicio - timedelta(days=cant_dias)
-        fecha_fin_anterior = fecha_inicio - timedelta(days=1)
-        
-        empresas_activas_anterior = set(
-            Venta.objects.filter(
-                fecha__date__gte=fecha_inicio_anterior,
-                fecha__date__lte=fecha_fin_anterior
-            ).values_list('empresa_id', flat=True).distinct()
-        )
-        
-        empresas_activas_actual = set(
-            Venta.objects.filter(
-                fecha__date__gte=fecha_inicio,
-                fecha__date__lte=fecha_fin
-            ).values_list('empresa_id', flat=True).distinct()
-        )
-        
-        empresas_inactivadas_periodo = len(empresas_activas_anterior - empresas_activas_actual)
+        # Total matrículas nuevas del mes
+        total_matriculas_nuevas_mes = Matricula.objects.filter(
+            created_at__date__gte=primer_dia_mes,
+            created_at__date__lte=fecha_fin
+        ).count()
+
+        # Total empresas nuevas del mes
+        total_empresas_nuevas_mes = Empresa.objects.filter(
+            created_at__date__gte=primer_dia_mes,
+            created_at__date__lte=fecha_fin
+        ).count()
+
+        # Combustible más cargado (históricamente)
+        combustible_mas_cargado = VentaDetalle.objects.values('nombre_producto').annotate(
+            total_litros=Sum('cantidad')
+        ).order_by('-total_litros').first()
+
+        combustible_mas_cargado_data = {
+            'nombre': combustible_mas_cargado['nombre_producto'] if combustible_mas_cargado else 'N/A',
+            'litros': float(combustible_mas_cargado['total_litros']) if combustible_mas_cargado else 0
+        }
+
+        # Estación de servicio más frecuentada (históricamente)
+        estacion_mas_frecuentada = Venta.objects.values(
+            'codigo_estacion', 'nombre_estacion'
+        ).annotate(
+            total_cargas=Count('id')
+        ).order_by('-total_cargas').first()
+
+        estacion_mas_frecuentada_data = {
+            'nombre': estacion_mas_frecuentada['nombre_estacion'] or estacion_mas_frecuentada['codigo_estacion'] if estacion_mas_frecuentada else 'N/A',
+            'cargas': estacion_mas_frecuentada['total_cargas'] if estacion_mas_frecuentada else 0
+        }
+
+        # Monto total del mes actual
+        monto_total_mes = Venta.objects.filter(
+            fecha__date__gte=primer_dia_mes,
+            fecha__date__lte=fecha_fin
+        ).aggregate(total=Sum('total'))['total'] or 0
 
         resumen_uso_plataforma = {
-            'tasa_actividad_empresas': tasa_actividad_empresas,
-            'tasa_actividad_usuarios': tasa_actividad_usuarios,
-            'promedio_usuarios_por_empresa': promedio_usuarios_por_empresa,
-            'promedio_matriculas_por_empresa': promedio_matriculas_por_empresa,
-            'promedio_cargas_por_empresa': promedio_cargas_por_empresa,
-            'empresas_nuevas_periodo': empresas_nuevas_periodo,
-            'empresas_inactivadas_periodo': empresas_inactivadas_periodo
+            'total_cargas_mes': total_cargas_mes,
+            'total_usuarios_nuevos_mes': total_usuarios_nuevos_mes,
+            'total_matriculas_nuevas_mes': total_matriculas_nuevas_mes,
+            'total_empresas_nuevas_mes': total_empresas_nuevas_mes,
+            'combustible_mas_cargado': combustible_mas_cargado_data,
+            'estacion_mas_frecuentada': estacion_mas_frecuentada_data,
+            'monto_total_mes': float(monto_total_mes)
         }
 
         return JsonResponse({
-            'fecha_inicio': fecha_inicio.strftime('%Y-%m-%d'),
+            'fecha_inicio': None,  # Ya no hay fecha inicio, es desde el principio
             'fecha_fin': fecha_fin.strftime('%Y-%m-%d'),
             'kpis_sistema': kpis_sistema,
             'metricas_por_empresa': metricas_por_empresa,
