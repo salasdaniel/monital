@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -9,7 +9,7 @@ import { Button } from "../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
-import { DollarSign, ShoppingCart, MapPin, Fuel, Check, ChevronsUpDown } from "lucide-react";
+import { DollarSign, ShoppingCart, MapPin, Fuel, Check, ChevronsUpDown, Home, Building2, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "../components/ui/chart";
 import { API_URLS, APP_KEY } from '../api/config';
@@ -72,6 +72,7 @@ interface UserData {
   name: string;
 }
 const DashboardCliente: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
   const [periodo, setPeriodo] = useState<string>('30');
@@ -82,6 +83,24 @@ const DashboardCliente: React.FC = () => {
   const [empresas, setEmpresas] = useState<Array<{ id: number; razon_social: string; ruc: string }>>([]);
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState<string>('');
   const [openCombobox, setOpenCombobox] = useState(false);
+
+  // Menú de navegación inferior para móviles
+  const bottomNavItems = user?.role === 'admin' 
+    ? [
+        { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Building2, label: 'Empresas', path: '/empresas' },
+        { icon: Users, label: 'Usuarios', path: '/users' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ]
+    : [
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ];
 
 
   useEffect(() => {
@@ -173,26 +192,28 @@ const DashboardCliente: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar
-        userRole={user?.role ?? 'user'}
-        currentPath={location.pathname}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="hidden md:block">
+        <Sidebar
+          userRole={user?.role ?? 'user'}
+          currentPath={location.pathname}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
         <Header title="Dashboard" subtitle="Resumen de ventas y consumo de combustible" />
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6 pt-[76px] md:pt-[92px]">
           {/* Card de Bienvenida y Filtros */}
           <Card className="border-0 shadow-sm mb-6">
             <CardContent className="pt-6 pb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-col gap-4">
                 {/* Mensaje de Bienvenida */}
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
                     Bienvenido {user?.name || 'Usuario'}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs md:text-sm text-gray-500">
                     {new Date().toLocaleDateString('es-ES', {
                       day: 'numeric',
                       month: 'long',
@@ -205,18 +226,18 @@ const DashboardCliente: React.FC = () => {
                 </div>
 
                 {/* Filtros */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-3">
                   {/* Selector de Empresa - Solo para Admin */}
                   {user?.role === 'admin' && (
-                    <div className="flex items-center gap-3">
-                      <Label className="text-sm font-semibold text-gray-700">Empresa:</Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <Label className="text-xs md:text-sm font-semibold text-gray-700 min-w-[70px]">Empresa:</Label>
                       <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="minimal"
                             role="combobox"
                             aria-expanded={openCombobox}
-                            className="w-[300px] justify-between h-9 border-gray-200 bg-white hover:bg-gray-50"
+                            className="w-full sm:w-[280px] md:w-[300px] justify-between h-9 border-gray-200 bg-white hover:bg-gray-50"
                           >
                             {empresaSeleccionada === ''
                               ? "Seleccionar empresa..."
@@ -225,7 +246,7 @@ const DashboardCliente: React.FC = () => {
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0">
+                        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[280px] md:w-[300px] p-0">
                           <Command>
                             <CommandInput placeholder="Buscar empresa..." />
                             <CommandList>
@@ -258,10 +279,10 @@ const DashboardCliente: React.FC = () => {
                   )}
 
                   {/* Selector de Período */}
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm font-semibold text-gray-700">Período:</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <Label className="text-xs md:text-sm font-semibold text-gray-700 min-w-[70px]">Período:</Label>
                     <Select value={periodo} onValueChange={setPeriodo}>
-                      <SelectTrigger className="w-[200px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                      <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] border-gray-200 bg-white hover:bg-gray-50 transition-colors">
                         <SelectValue placeholder="Seleccionar período" />
                       </SelectTrigger>
                       <SelectContent>
@@ -295,14 +316,14 @@ const DashboardCliente: React.FC = () => {
           {/* KPIs Cards - Estilo Horizon UI */}
           {!loading && dashboardData && (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-4 md:mb-6">
             {/* Total Ventas */}
             <Card className="border-0 shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Total Cargas</p>
-                    <h3 className="text-2xl font-bold text-gray-900">{dashboardData?.encabezados?.total_cargas || 0}</h3>
+                    <p className="text-xs md:text-sm text-gray-500 mb-1">Total Cargas</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">{dashboardData?.encabezados?.total_cargas || 0}</h3>
                     <div className="flex items-center gap-1 mt-2">
                       {/* <span className="text-xs font-semibold text-green-500 flex items-center">
                         <ArrowUp className="h-3 w-3" />
@@ -323,8 +344,8 @@ const DashboardCliente: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Monto Total</p>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <p className="text-xs md:text-sm text-gray-500 mb-1">Monto Total</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">
                       ₲{dashboardData?.encabezados?.total_venta 
                         ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.total_venta) 
                         : '0'}
@@ -342,8 +363,8 @@ const DashboardCliente: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Litros Totales</p>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <p className="text-xs md:text-sm text-gray-500 mb-1">Total Estaciones</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">
                       {dashboardData?.encabezados?.litros_totales 
                         ? new Intl.NumberFormat('es-PY').format(dashboardData.encabezados.litros_totales) 
                         : '0'} L
@@ -361,8 +382,8 @@ const DashboardCliente: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Matriculas</p>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <p className="text-xs md:text-sm text-gray-500 mb-1">Matriculas</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">
                       {dashboardData?.encabezados?.total_matriculas || 0}
                     </h3>
                   </div>
@@ -375,7 +396,7 @@ const DashboardCliente: React.FC = () => {
           </div>
 
           {/* Fila con gráfico principal y card lateral */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-4 md:mb-6">
             {/* Gráfico de Ventas por Período - 3 columnas */}
             <div className="lg:col-span-3">
               <Card className="border-0 shadow-sm">
@@ -447,7 +468,7 @@ const DashboardCliente: React.FC = () => {
                   <CardDescription className="text-sm text-gray-500">Métricas del período</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-4">
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Ticket Promedio</span>
@@ -504,7 +525,7 @@ const DashboardCliente: React.FC = () => {
           </div>
 
           {/* Fila con 3 gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 mb-4 md:mb-6">
             {/* Top Estaciones - Estilo Horizon UI */}
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-4">
@@ -771,6 +792,32 @@ const DashboardCliente: React.FC = () => {
           </>
           )}
         </main>
+      </div>
+
+      {/* Barra de navegación inferior - Solo móvil */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-2 px-3 transition-colors ${
+                    isActive
+                      ? 'text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

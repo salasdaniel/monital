@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -12,7 +12,7 @@ import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown, Upload } from "lucide-react";
+import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown, Upload, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
@@ -54,6 +54,7 @@ interface UserData {
 }
 
 const Matriculas: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<UserData | null>(null);
@@ -65,6 +66,24 @@ const Matriculas: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingMatricula, setEditingMatricula] = useState<Matricula | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Menú de navegación inferior para móviles
+  const bottomNavItems = user?.role === 'admin' 
+    ? [
+        { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Building2, label: 'Empresas', path: '/empresas' },
+        { icon: Users, label: 'Usuarios', path: '/users' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ]
+    : [
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ];
 
   // Estados para filtros y paginación
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
@@ -468,12 +487,14 @@ const Matriculas: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
+        <div className="flex items-center justify-center min-h-screen md:ml-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-lg text-gray-600">Cargando matrículas...</p>
@@ -485,13 +506,15 @@ const Matriculas: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Matrículas" subtitle="Gestión de matrículas de vehículos" />
 
           {error && (
@@ -506,7 +529,7 @@ const Matriculas: React.FC = () => {
             </div>
           )}
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 pt-[76px] md:pt-[92px]">
             <div className="flex flex-col gap-6">
               <Card className="border border-gray-200">
                 {/* Filtros en fila horizontal */}
@@ -727,25 +750,25 @@ const Matriculas: React.FC = () => {
                 </CardContent>
 
                 {/* Paginación */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 mb-4">
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === 1}
                     onClick={() => setPaginaActual(paginaActual - 1)}
                   >
                     Anterior
                   </Button>
 
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500 text-center">
                     Página {paginaActual} de {totalPaginas || 1} - {filteredMatriculas.length} registros
                   </span>
 
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === totalPaginas || totalPaginas === 0}
                     onClick={() => setPaginaActual(paginaActual + 1)}
                   >
@@ -1003,6 +1026,32 @@ const Matriculas: React.FC = () => {
               )}
             </div>
           </main>
+        </div>
+
+        {/* Barra de navegación inferior - Solo móvil */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max">
+              {bottomNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-2 px-3 transition-colors ${
+                      isActive
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <Toaster />

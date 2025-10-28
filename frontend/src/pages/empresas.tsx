@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -19,7 +19,7 @@ import {
 } from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Building2, AlertCircle, X, Edit2, Power } from "lucide-react";
+import { Plus, Building2, AlertCircle, X, Edit2, Power, Home, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 
@@ -60,6 +60,7 @@ interface UserData {
 }
 
 const Empresas: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<UserData | null>(null);
@@ -70,6 +71,17 @@ const Empresas: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Menú de navegación inferior para móviles (solo admin)
+  const bottomNavItems = [
+    { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: Building2, label: 'Empresas', path: '/empresas' },
+    { icon: Users, label: 'Usuarios', path: '/users' },
+    { icon: Coins, label: 'Ventas', path: '/ventas' },
+    { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+    { icon: Car, label: 'Matrículas', path: '/matriculas' },
+  ];
 
   // Estados para filtros y paginación
   const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
@@ -387,13 +399,14 @@ const Empresas: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
+        <div className="flex items-center justify-center min-h-screen md:ml-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-lg text-gray-600">Cargando empresas...</p>
@@ -405,16 +418,15 @@ const Empresas: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
 
-        />
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Empresas" subtitle="Gestión de empresas del sistema" />
           {/* Error general */}
 
@@ -432,7 +444,7 @@ const Empresas: React.FC = () => {
           )}
 
           {/* Main Content Area */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 pt-[76px] md:pt-[92px]">
             <div className="flex flex-col gap-6">
               {/* Tarjetas de métricas - Exactamente como en la imagen */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -672,27 +684,26 @@ const Empresas: React.FC = () => {
                   )}
                 </CardContent>
 
-                {/* Paginación - Exactamente como en la imagen */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 mb-4">
+                {/* Paginación */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 mb-4">
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === 1}
                     onClick={() => setPaginaActual(paginaActual - 1)}
                   >
                     Anterior
                   </Button>
 
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500 text-center">
                     Página {paginaActual} de {totalPaginas} - {filteredEmpresas.length} registros
-
                   </span>
 
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === totalPaginas}
                     onClick={() => setPaginaActual(paginaActual + 1)}
                   >
@@ -889,6 +900,32 @@ const Empresas: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Barra de navegación inferior - Solo móvil */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-2 px-3 transition-colors ${
+                    isActive
+                      ? 'text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </>
   );
 };

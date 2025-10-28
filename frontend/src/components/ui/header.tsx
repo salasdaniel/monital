@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
 
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="fixed top-0 right-0 left-0 md:left-64 bg-white shadow-sm border-b z-30">
       <div className="px-4 md:px-6 py-3 md:py-4">
         <div className="flex justify-between items-center">
           <div>

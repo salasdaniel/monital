@@ -155,14 +155,11 @@ const Dashboard: React.FC = () => {
         <div className="hidden md:block">
           <Sidebar userRole={user?.role ?? 'user'} currentPath={location.pathname} />
         </div>
-        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
-          <Header title="Dashboard Admin" subtitle="Panel de Control del Sistema" />
-          <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Cargando datos del sistema...</p>
-            </div>
-          </main>
+        <div className="flex items-center justify-center min-h-screen md:ml-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando datos del sistema...</p>
+          </div>
         </div>
       </div>
     );
@@ -176,7 +173,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Dashboard Admin" subtitle="Panel de Control del Sistema" />
-          <main className="flex-1 p-4 md:p-6">
+          <main className="flex-1 p-4 md:p-6 pt-[76px] md:pt-[92px]">
             <Card className="border-red-200 bg-red-50">
               <CardHeader>
                 <CardTitle className="text-red-600 flex items-center gap-2">
@@ -215,7 +212,7 @@ const Dashboard: React.FC = () => {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 pt-[76px] md:pt-[92px]">
           <div className="space-y-4 md:space-y-6">
             {/* Filtros */}
             <Card className="shadow-md border-gray-200">

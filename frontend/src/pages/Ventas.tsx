@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -11,7 +11,7 @@ import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, DollarSign, Check, ChevronsUpDown, MapPin, Car } from "lucide-react";
+import { ShoppingCart, DollarSign, Check, ChevronsUpDown, MapPin, Car, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
@@ -73,6 +73,7 @@ interface Empresa {
 }
 
 const Ventas: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<UserData | null>(null);
@@ -80,6 +81,24 @@ const Ventas: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Menú de navegación inferior para móviles
+  const bottomNavItems = user?.role === 'admin' 
+    ? [
+        { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Building2, label: 'Empresas', path: '/empresas' },
+        { icon: Users, label: 'Usuarios', path: '/users' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ]
+    : [
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ];
 
   // Estados para filtros y paginación
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
@@ -311,12 +330,14 @@ const Ventas: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
+        <div className="flex items-center justify-center min-h-screen md:ml-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-lg text-gray-600">Cargando ventas...</p>
@@ -328,13 +349,15 @@ const Ventas: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Ventas" subtitle="Visualización de ventas registradas" />
 
           {error && (
@@ -349,17 +372,17 @@ const Ventas: React.FC = () => {
             </div>
           )}
 
-          <main className="flex-1 p-6">
-            <div className="flex flex-col gap-6">
+          <main className="flex-1 p-4 md:p-6 pt-[76px] md:pt-[92px]">
+            <div className="flex flex-col gap-4 md:gap-6">
               {/* Tarjetas de métricas */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="border border-gray-200">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600">Total Ventas</CardTitle>
                     <ShoppingCart className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-xl md:text-2xl font-bold text-blue-600">
                       {totalVentas}
                     </div>
                     <p className="text-xs text-gray-500">Registros totales</p>
@@ -372,7 +395,7 @@ const Ventas: React.FC = () => {
                     <DollarSign className="h-4 w-4 text-gray-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-xl md:text-2xl font-bold text-blue-600">
                       {formatCurrency(totalMonto.toString())}
                     </div>
                     <p className="text-xs text-gray-500">Suma de todas las ventas</p>
@@ -658,25 +681,25 @@ const Ventas: React.FC = () => {
                   )}
                 </CardContent>
 
-                <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 mb-4">
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === 1}
                     onClick={() => setPaginaActual(paginaActual - 1)}
                   >
                     Anterior
                   </Button>
 
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500 text-center">
                     Página {paginaActual} de {totalPaginas} - {ventasFiltradas.length} registros
                   </span>
 
                   <Button
                     variant="minimal"
                     size="sm"
-                    className="px-3 text-gray-700"
+                    className="px-3 text-gray-700 min-w-[80px]"
                     disabled={paginaActual === totalPaginas}
                     onClick={() => setPaginaActual(paginaActual + 1)}
                   >
@@ -686,6 +709,32 @@ const Ventas: React.FC = () => {
               </Card>
             </div>
           </main>
+        </div>
+
+        {/* Barra de navegación inferior - Solo móvil */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max">
+              {bottomNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-2 px-3 transition-colors ${
+                      isActive
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <Toaster />

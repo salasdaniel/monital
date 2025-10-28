@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -10,7 +10,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, Package, DollarSign, TrendingUp, Check, ChevronsUpDown } from "lucide-react";
+import { ShoppingCart, Package, DollarSign, TrendingUp, Check, ChevronsUpDown, Home, Building2, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
 import { getUser } from "../utils/auth";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
@@ -57,12 +57,31 @@ interface Empresa {
 }
 
 const VentasDetalle: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<UserData | null>(null);
   const [detalles, setDetalles] = useState<VentaDetalle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Menú de navegación inferior para móviles
+  const bottomNavItems = user?.role === 'admin' 
+    ? [
+        { icon: SlidersHorizontal, label: 'Panel', path: '/panel' },
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Building2, label: 'Empresas', path: '/empresas' },
+        { icon: Users, label: 'Usuarios', path: '/users' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ]
+    : [
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
+        { icon: Coins, label: 'Ventas', path: '/ventas' },
+        { icon: ChartColumnIncreasing, label: 'Detalle', path: '/ventas-detalle' },
+        { icon: Car, label: 'Matrículas', path: '/matriculas' },
+      ];
 
   // Estados para filtros y paginación
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
@@ -306,12 +325,14 @@ const VentasDetalle: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
+        <div className="flex items-center justify-center min-h-screen md:ml-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-lg text-gray-600">Cargando detalles de ventas...</p>
@@ -323,15 +344,15 @@ const VentasDetalle: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <Sidebar
-          userRole={user?.role ?? 'user'}
-          currentPath={location.pathname}
-        />
+      <div className="min-h-screen bg-gray-50">
+        <div className="hidden md:block">
+          <Sidebar
+            userRole={user?.role ?? 'user'}
+            currentPath={location.pathname}
+          />
+        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-16 md:pb-0 md:ml-64">
           <Header title="Detalles de Ventas" subtitle="Vista detallada de líneas de productos vendidos" />
 
           {/* Error general */}
@@ -348,7 +369,7 @@ const VentasDetalle: React.FC = () => {
           )}
 
           {/* Main Content Area */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 pt-[76px] md:pt-[92px]">
             <div className="flex flex-col gap-6">
               {/* Tarjetas de métricas */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -625,18 +646,19 @@ const VentasDetalle: React.FC = () => {
 
                   {/* Paginación */}
                   {totalPaginas > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-                      <div className="text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-gray-200">
+                      <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
                         Mostrando {((((paginaActual - 1) * itemsPorPagina) + 1)).toLocaleString('es-PE')} a{' '}
                         {Math.min(paginaActual * itemsPorPagina, filteredDetalles.length).toLocaleString('es-PE')} de{' '}
                         {filteredDetalles.length.toLocaleString('es-PE')} resultados
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 justify-center sm:justify-end flex-wrap">
                         <Button
                           variant="minimal"
                           size="sm"
                           onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
                           disabled={paginaActual === 1}
+                          className="min-w-[70px]"
                         >
                           Anterior
                         </Button>
@@ -659,7 +681,7 @@ const VentasDetalle: React.FC = () => {
                                 variant={paginaActual === pageNumber ? "default" : "minimal"}
                                 size="sm"
                                 onClick={() => setPaginaActual(pageNumber)}
-                                className="w-8"
+                                className="w-8 h-8"
                               >
                                 {pageNumber}
                               </Button>
@@ -671,6 +693,7 @@ const VentasDetalle: React.FC = () => {
                           size="sm"
                           onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
                           disabled={paginaActual === totalPaginas}
+                          className="min-w-[70px]"
                         >
                           Siguiente
                         </Button>
@@ -681,6 +704,32 @@ const VentasDetalle: React.FC = () => {
               </Card>
             </div>
           </main>
+        </div>
+
+        {/* Barra de navegación inferior - Solo móvil */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max">
+              {bottomNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-2 px-3 transition-colors ${
+                      isActive
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <Toaster />
