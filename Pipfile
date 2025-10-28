@@ -10,6 +10,7 @@ psycopg2-binary = "*"
 python-decouple = "*"
 django-cors-headers = "*"
 openpyxl = "*"
+pyjwt = "*"
 
 [dev-packages]
 
