@@ -8,16 +8,18 @@ from datetime import datetime
 from decimal import Decimal
 import json
 from .views import validate_basic_auth,  validate_app_key, validate_jwt
-
+import logging
 
 
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RegistrarVentaView(View):
-  
-    
     def post(self, request):
+        # Logging del request completo
+        logger = logging.getLogger("venta_logger")
+        logger.info(f"Request recibido en RegistrarVentaView: body={request.body.decode('utf-8')}, headers={dict(request.headers)}")
+        
         # Validar autenticación
         auth_error = validate_basic_auth(request)
         if auth_error:

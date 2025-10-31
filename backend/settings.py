@@ -103,3 +103,30 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Configuración de logging para ventas
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'venta_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'venta_requests.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'venta_logger': {
+            'handlers': ['venta_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
