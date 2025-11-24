@@ -280,8 +280,15 @@ class AdminDashboardView(View):
 
             # Última carga y días de inactividad
             ultima_venta = Venta.objects.filter(empresa_id=empresa.id).order_by('-fecha').first()
-            ultima_carga = ultima_venta.fecha.strftime('%Y-%m-%d') if ultima_venta else None
-            dias_inactiva = (fecha_fin - ultima_venta.fecha.date()).days if ultima_venta else None
+            if ultima_venta and ultima_venta.fecha:
+                ultima_carga = ultima_venta.fecha.strftime('%Y-%m-%d')
+                try:
+                    dias_inactiva = (fecha_fin - ultima_venta.fecha.date()).days
+                except Exception:
+                    dias_inactiva = None
+            else:
+                ultima_carga = None
+                dias_inactiva = None
 
             metricas_por_empresa.append({
                 'empresa_id': empresa.id,
@@ -331,7 +338,7 @@ class AdminDashboardView(View):
 
         combustible_mas_cargado_data = {
             'nombre': combustible_mas_cargado['nombre_producto'] if combustible_mas_cargado else 'N/A',
-            'litros': float(combustible_mas_cargado['total_litros']) if combustible_mas_cargado else 0
+            'litros': float(combustible_mas_cargado['total_litros']) if combustible_mas_cargado and combustible_mas_cargado['total_litros'] is not None else 0
         }
 
         # Estación de servicio más frecuentada (históricamente)

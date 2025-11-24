@@ -55,9 +55,14 @@ class RegistrarVentaView(View):
             fecha = None
             if fecha_str:
                 try:
+                    # Intentar primero con formato completo (con segundos)
                     fecha = datetime.strptime(fecha_str, '%Y-%m-%d %H:%M:%S')
-                except:
-                    pass  # Si no se puede parsear, se deja en None
+                except ValueError:
+                    try:
+                        # Intentar con formato sin segundos
+                        fecha = datetime.strptime(fecha_str, '%Y-%m-%d %H:%M')
+                    except ValueError:
+                        pass  # Si no se puede parsear, se deja en None
             
             # Buscar o crear empresa por RUC (si existe)
             empresa = None
@@ -124,6 +129,7 @@ class RegistrarVentaView(View):
                 codigo_producto = linea.get('codigoProducto')
                 nombre_producto = linea.get('nombreProducto')
                 precio_unitario = linea.get('precioUnitario')
+                unidad_medida = linea.get('unidad')
                 cantidad = linea.get('cantidad')
                 
                 # Calcular subtotal
@@ -137,7 +143,8 @@ class RegistrarVentaView(View):
                     nombre_producto=nombre_producto,
                     precio_unitario=Decimal(str(precio_unitario)) if precio_unitario else None,
                     cantidad=Decimal(str(cantidad)) if cantidad else None,
-                    subtotal=subtotal
+                    subtotal=subtotal,
+                    unidad=unidad_medida
                 )
             
             # Log para debugging
