@@ -4,7 +4,7 @@ from decouple import config
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+APPEND_SLASH=False
 # Seguridad
 SHELL_API_USERNAME = config("SHELL_API_USERNAME", default="user")
 SHELL_API_PASSWORD = config("SHELL_API_PASSWORD", default="pass")
