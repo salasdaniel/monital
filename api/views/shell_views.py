@@ -35,7 +35,7 @@ class RegistrarVentaView(View):
             ticket = data.get('ticket')
             fecha_str = data.get('fecha')
             codigo_cliente = data.get('codigoCliente')
-            ruc_cliente = data.get('ruc')
+            ruc_cliente = data.get('documentoCliente')
             nombre_cliente = data.get('nombreCliente')
             codigo_estacion = data.get('codigoEstacion')
             nombre_estacion = data.get('nombreEstacion')
@@ -47,6 +47,9 @@ class RegistrarVentaView(View):
             matricula = data.get('matricula')
             kilometraje = data.get('kilometraje')
             tarjeta = data.get('tarjeta')
+            numeroVale = data.get('numeroVale')
+            numeroAutorizacionVale = data.get('numeroAutorizacionVale')
+
             
             # Convertir fecha si viene en formato string
             fecha = None
@@ -111,7 +114,9 @@ class RegistrarVentaView(View):
                 nombre_chofer=nombre_chofer,
                 matricula=matricula,  # Campo texto original de la API
                 kilometraje=kilometraje,
-                tarjeta=tarjeta
+                tarjeta=tarjeta,
+                numero_vale=numeroVale,
+                numero_autorizacion_vale=numeroAutorizacionVale
             )
             
             # Procesar y guardar líneas de venta
@@ -225,6 +230,8 @@ class VentaListView(View):
                     'matricula_id': venta.matricula_id.id if venta.matricula_id else None,
                     'kilometraje': venta.kilometraje,
                     'tarjeta': venta.tarjeta,
+                    'numero_vale': venta.numero_vale,
+                    'numero_autorizacion_vale': venta.numero_autorizacion_vale,
                     'empresa_id': venta.empresa_id,
                     'empresa_nombre': venta.empresa.nombre_comercial if venta.empresa else None,
                     'empresa_ruc': venta.empresa.ruc if venta.empresa else None,

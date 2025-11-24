@@ -106,6 +106,8 @@ class Venta(models.Model):
     matricula = models.CharField(max_length=50, null=True, blank=True)  # Campo texto que viene de la API
     kilometraje = models.IntegerField(null=True, blank=True)
     tarjeta = models.CharField(max_length=50, null=True, blank=True)
+    numero_vale = models.CharField(max_length=100, null=True, blank=True)
+    numero_autorizacion_vale = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

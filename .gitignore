@@ -1,1 +1,21 @@
 .env
+.venv
+venta_requests.log
+
+# Ignorar entorno virtual
+.venv/
+
+# Ignorar archivos temporales de Python
+__pycache__/
+*.pyc
+
+# Ignorar node_modules
+node_modules/
+
+# Ignorar build frontend
+dist/
+build/
+
+# Ignorar IDEs
+.vscode/
+.idea/
