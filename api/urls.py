@@ -29,7 +29,7 @@ urlpatterns = [
     path('ventas/detalle/', VentaDetalleListView.as_view(), name='venta-detalle-list'),
 
     # URL para Shell (integración flota)
-    path('registrar/', RegistrarVentaView.as_view(), name='registrar-venta'),
+    path('registrar', RegistrarVentaView.as_view(), name='registrar-venta'),
 
     # URLs para matrículas
     path('matriculas/', MatriculaListView.as_view(), name='matricula-list'),
