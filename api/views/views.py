@@ -43,29 +43,20 @@ def validate_jwt(request):
 
 def validate_basic_auth(request):
     """
-    Valida la autenticación básica contra credenciales configuradas en .env
+    Valida las credenciales enviadas en los headers contra las configuradas en .env
     """
-    auth_header = request.headers.get('Authorization')
+    username = request.headers.get('username')
+    password = request.headers.get('password')
     
-    if not auth_header or not auth_header.startswith('Basic '):
-        return JsonResponse({'ok': False, 'error': 'Autenticación requerida'}, status=401)
+    if not username or not password:
+        return JsonResponse({'ok': False, 'error': 'Credenciales requeridas en headers'}, status=401)
     
-    try:
-        # Decodificar credenciales Base64
-        encoded_credentials = auth_header.split(' ')[1]
-        decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
-        username, password = decoded_credentials.split(':', 1)
-        
-        # Validar contra credenciales del .env
-        valid_username = settings.SHELL_API_USERNAME
-        valid_password =settings.SHELL_API_PASSWORD
-        
-        print(f"Validando usuario: {valid_username}")
-        print(f"Validando contraseña: {valid_password}")
-        if username != valid_username or password != valid_password:
-            return JsonResponse({'ok': False, 'error': 'Credenciales inválidas'}, status=401)
-            
-    except Exception as e:
-        return JsonResponse({'ok': False, 'error': 'Formato de autenticación inválido'}, status=401)
+    # Validar contra credenciales del .env
+    valid_username = settings.SHELL_API_USERNAME
+    valid_password = settings.SHELL_API_PASSWORD
+    
+    print(f"Validando usuario: {username}")
+    if username != valid_username or password != valid_password:
+        return JsonResponse({'ok': False, 'error': 'Credenciales inválidas'}, status=401)
     
     return None  # Autenticación exitosa
