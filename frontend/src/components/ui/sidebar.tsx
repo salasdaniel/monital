@@ -7,7 +7,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Monitor,
+  User,
   Users,
   Coins,
   ChartColumnIncreasing,
@@ -31,6 +31,8 @@ interface UserData {
   empresa_id?: number;
   empresa_nombre?: string;
   empresa_ruc?: string;
+  name?: string;
+  last_name?: string;
 }
 interface SidebarProps {
   userRole: string;
@@ -123,22 +125,23 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   return (
-    <div className={cn(
-      "bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ease-in-out flex flex-col fixed left-0 top-0 h-screen z-40",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
+    <div 
+      className={cn(
+        "border-r border-white-700 shadow-sm transition-all duration-300 ease-in-out flex flex-col fixed left-0 top-0 h-screen z-40",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+      style={{ backgroundColor: '#20409a' }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-white-700">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="bg-primary rounded-lg p-2">
-                <Monitor className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">{user?.empresa_nombre || 'Empresa'}</h2>
-                <p className="text-sm text-gray-500">{user?.empresa_ruc || 'RUC'}</p>
-              </div>
+            <div className="flex items-center justify-center w-full">
+              <img 
+                src="/logotek.png" 
+                alt="Logo" 
+                className="h-12 w-auto object-contain"
+              />
             </div>
           )}
 
@@ -147,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             size="sm"
             onClick={toggleSidebar}
             className={cn(
-              "h-8 w-8 p-0",
+              "h-8 w-8 p-0 text-white hover:bg-white/10",
               isCollapsed && "mx-auto"
             )}
           >
@@ -167,9 +170,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             key={item.id}
             variant={currentPath === item.href ? "secondary" : "ghost"}
             className={cn(
-              "w-full justify-start h-10 px-3",
+              "w-full justify-start h-10 px-3 text-white hover:bg-white/10",
               isCollapsed ? "px-2" : "px-3",
-              currentPath === item.href && "bg-primary/10 text-primary border-primary/20"
+              currentPath === item.href && "bg-white/20 text-white"
             )}
             onClick={() => handleMenuClick(item)}
           >
@@ -189,11 +192,37 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer */}
       
-      <div className="p-4 border-t border-gray-200">
-        {!isCollapsed && (
-          <div className="text-xs text-gray-500 text-center">
-            <p>Monital v1.0</p>
-            <p>Sistema de Monitoreo</p>
+      <div className="p-4">
+        {!isCollapsed ? (
+          <div className="space-y-3">
+            {/* Perfil de Usuario */}
+            <div className="text-white text-center py-3">
+              <div className="flex items-center justify-center gap-2 mb-2">
+               
+                <p className="text-sm font-semibold truncate"> 
+                  {user?.name || 'Usuario'} {user?.last_name || ''}
+                </p>
+              </div>
+              <p className="text-xl font-bold text-white truncate my-2">
+                {user?.empresa_nombre || 'Empresa'}
+              </p>
+              <p className="text-sm text-white/60 truncate">
+                {user?.empresa_ruc || 'RUC'}
+              </p>
+            </div>
+            
+            {/* Versión */}
+            <div className="text-xs text-white/50 text-center pt-2 border-t border-white-700/50">
+              <p>Protek Flotas</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <span className="text-xs text-white font-semibold">
+                {user?.name?.charAt(0) || 'U'}
+              </span>
+            </div>
           </div>
         )}
       </div>
