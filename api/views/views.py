@@ -45,7 +45,7 @@ def validate_basic_auth(request):
     """
     Valida las credenciales enviadas en los headers contra las configuradas en .env
     """
-    username = request.headers.get('username')
+    username = request.headers.get('usuario')
     password = request.headers.get('password')
     
     if not username or not password:
