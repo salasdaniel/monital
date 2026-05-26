@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import DashboardCliente from './pages/DashboardCliente';
@@ -16,10 +16,11 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route 
           path="/panel-control" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <Dashboard />
             </ProtectedRoute>
           } 
@@ -27,7 +28,7 @@ function App() {
         <Route 
           path="/empresas" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <Empresas />
             </ProtectedRoute>
           } 
@@ -35,7 +36,7 @@ function App() {
         <Route 
           path="/users" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <Users />
             </ProtectedRoute>
           } 
@@ -43,7 +44,7 @@ function App() {
         <Route 
           path="/ventas" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin', 'user']}>
               <Ventas />
             </ProtectedRoute>
           } 
@@ -51,7 +52,7 @@ function App() {
         <Route 
           path="/ventas-detalle" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin', 'user']}>
               <VentasDetalle />
             </ProtectedRoute>
           } 
@@ -59,7 +60,7 @@ function App() {
         <Route 
           path="/matriculas" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin', 'user']}>
               <Matriculas />
             </ProtectedRoute>
           } 
@@ -67,11 +68,12 @@ function App() {
         <Route 
           path="/dashboard" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin', 'user']}>
               <DashboardCliente />
             </ProtectedRoute>
           } 
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
