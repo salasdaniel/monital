@@ -7,8 +7,10 @@ import jwt, json
 from decouple import config
 from .views import validate_app_key, validate_jwt
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 from openpyxl import load_workbook
 from io import BytesIO
+from ..models import Venta
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -121,6 +123,44 @@ class MatriculaUpdateView(View):
 
 
 class MatriculaListView(View):
+    def _get_consumo_data(self, nro_matricula):
+        ventas = list(
+            Venta.objects.filter(
+                matricula=nro_matricula,
+                kilometraje__isnull=False
+            )
+            .order_by('-fecha', '-created_at', '-id')[:2]
+        )
+
+        if not ventas:
+            return {
+                'ultimo_kilometraje': None,
+                'ultima_carga': None,
+                'km_recorridos': None,
+                'promedio_consumo_l_km': None
+            }
+
+        ultimo_kilometraje = ventas[0].kilometraje
+        total_cantidad = ventas[0].lineas.aggregate(
+            total=Sum('cantidad')
+        )['total']
+        ultima_carga = float(total_cantidad) if total_cantidad is not None else None
+        km_recorridos = None
+        promedio_consumo_l_km = None
+
+        if len(ventas) > 1:
+            km_recorridos = ultimo_kilometraje - ventas[1].kilometraje
+
+            if total_cantidad:
+                promedio_consumo_l_km = km_recorridos / float(total_cantidad)
+
+        return {
+            'ultimo_kilometraje': ultimo_kilometraje,
+            'ultima_carga': ultima_carga,
+            'km_recorridos': km_recorridos,
+            'promedio_consumo_l_km': promedio_consumo_l_km
+        }
+
     def get(self, request):
         # Validar app_key por seguridad
         invalid = validate_app_key(request)
@@ -153,6 +193,7 @@ class MatriculaListView(View):
             # Serializar los datos
             matriculas_data = []
             for matricula in matriculas:
+                consumo_data = self._get_consumo_data(matricula.nro_matricula)
                 matriculas_data.append({
                     'id': matricula.id,
                     'nro_matricula': matricula.nro_matricula,
@@ -161,7 +202,8 @@ class MatriculaListView(View):
                     'empresa_nombre': matricula.empresa.nombre_comercial if matricula.empresa else None,
                     'created_at': matricula.created_at.isoformat(),
                     'updated_at': matricula.updated_at.isoformat(),
-                    'usuario_creacion': matricula.usuario_creacion.username if matricula.usuario_creacion else None
+                    'usuario_creacion': matricula.usuario_creacion.username if matricula.usuario_creacion else None,
+                    **consumo_data
                 })
 
             return JsonResponse({

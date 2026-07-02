@@ -27,6 +27,10 @@ interface Matricula {
   created_at: string;
   updated_at: string;
   usuario_creacion?: string;
+  ultimo_kilometraje?: number | null;
+  ultima_carga?: number | null;
+  km_recorridos?: number | null;
+  promedio_consumo_l_km?: number | null;
 }
 
 interface MatriculaFormData {
@@ -52,6 +56,17 @@ interface UserData {
   role?: string;
   empresa_id?: number;
 }
+
+const formatNumericValue = (value?: number | null, maximumFractionDigits = 0) => {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+
+  return value.toLocaleString('es-PY', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  });
+};
 
 const Matriculas: React.FC = () => {
   const navigate = useNavigate();
@@ -678,6 +693,10 @@ const Matriculas: React.FC = () => {
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Matrícula</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Tracker ID</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Empresa</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Ultimo Kilometraje</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Ultima Carga</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Km recorridos</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Promedio consumo L/Km</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario Creación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha Creación</th>
                           {user?.role === 'admin' && (
@@ -699,6 +718,18 @@ const Matriculas: React.FC = () => {
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
                               {matricula.empresa_nombre || '-'}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {formatNumericValue(matricula.ultimo_kilometraje)}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {formatNumericValue(matricula.ultima_carga, 3)}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {formatNumericValue(matricula.km_recorridos)}
+                            </td>
+                            <td className="px-3 py-1 text-center text-gray-700">
+                              {formatNumericValue(matricula.promedio_consumo_l_km, 3)}
                             </td>
                             <td className="px-3 py-1 text-center text-gray-700">
                               {matricula.usuario_creacion || '-'}
