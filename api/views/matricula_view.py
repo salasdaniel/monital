@@ -151,8 +151,8 @@ class MatriculaListView(View):
         if len(ventas) > 1:
             km_recorridos = ultimo_kilometraje - ventas[1].kilometraje
 
-            if total_cantidad:
-                promedio_consumo_l_km = km_recorridos / float(total_cantidad)
+            if total_cantidad and km_recorridos > 0:
+                promedio_consumo_l_km = (float(total_cantidad) / km_recorridos) * 100
 
         return {
             'ultimo_kilometraje': ultimo_kilometraje,

@@ -696,7 +696,7 @@ const Matriculas: React.FC = () => {
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Ultimo Kilometraje</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Ultima Carga</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Km recorridos</th>
-                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Promedio consumo L/Km</th>
+                          <th className="text-center px-3 py-1 text-gray-700 font-medium">Promedio consumo L/100 Km</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Usuario Creación</th>
                           <th className="text-center px-3 py-1 text-gray-700 font-medium">Fecha Creación</th>
                           {user?.role === 'admin' && (
