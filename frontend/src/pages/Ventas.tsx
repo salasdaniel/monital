@@ -11,8 +11,9 @@ import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, DollarSign, Check, ChevronsUpDown, MapPin, Car, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal } from "lucide-react";
+import { ShoppingCart, DollarSign, Check, ChevronsUpDown, MapPin, Car, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal, Download } from "lucide-react";
 import { getUser } from "../utils/auth";
+import { exportToExcel } from "../utils/exportExcel";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
 
@@ -572,6 +573,32 @@ const Ventas: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <Button
+                      variant="minimal"
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      disabled={ventasFiltradas.length === 0}
+                      onClick={() => exportToExcel('ventas', 'Ventas', [
+                        { header: 'ID', value: (v: Venta) => v.identificador_tr },
+                        { header: 'Ticket', value: (v: Venta) => v.ticket },
+                        { header: 'Fecha', value: (v: Venta) => v.fecha ? formatDate(v.fecha) : '' },
+                        { header: 'Cliente', value: (v: Venta) => v.nombre_cliente },
+                        { header: 'RUC Cliente', value: (v: Venta) => v.ruc_cliente },
+                        { header: 'Empresa', value: (v: Venta) => v.empresa_nombre },
+                        { header: 'Chofer', value: (v: Venta) => v.nombre_chofer },
+                        { header: 'Documento Chofer', value: (v: Venta) => v.documento_chofer },
+                        { header: 'Matrícula', value: (v: Venta) => v.matricula },
+                        { header: 'Kilometraje', value: (v: Venta) => v.kilometraje },
+                        { header: 'Estación', value: (v: Venta) => v.nombre_estacion },
+                        { header: 'Código Estación', value: (v: Venta) => v.codigo_estacion },
+                        { header: 'Moneda', value: (v: Venta) => v.codigo_moneda },
+                        { header: 'Total', value: (v: Venta) => Number(v.total || 0) },
+                        { header: 'Items', value: (v: Venta) => v.lineas?.length || 0 },
+                      ], ventasFiltradas)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar Excel
+                    </Button>
                   </div>
                 </div>
 

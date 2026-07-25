@@ -19,8 +19,9 @@ import {
 } from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Building2, AlertCircle, X, Edit2, Power, Home, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
+import { Plus, Building2, AlertCircle, X, Edit2, Power, Home, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal, Download } from "lucide-react";
 import { getUser } from "../utils/auth";
+import { exportToExcel } from "../utils/exportExcel";
 import { API_URLS, APP_KEY } from '../api/config';
 
 // Interfaces basadas en la API
@@ -571,6 +572,28 @@ const Empresas: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <Button
+                      onClick={() => exportToExcel('empresas', 'Empresas', [
+                        { header: 'ID', value: (e: Empresa) => e.id },
+                        { header: 'Razón Social', value: (e: Empresa) => e.razon_social },
+                        { header: 'Nombre Comercial', value: (e: Empresa) => e.nombre_comercial },
+                        { header: 'RUC', value: (e: Empresa) => e.ruc },
+                        { header: 'Dirección', value: (e: Empresa) => e.direccion },
+                        { header: 'Correo', value: (e: Empresa) => e.correo_referencia },
+                        { header: 'Teléfono', value: (e: Empresa) => e.numero_referencia },
+                        { header: 'Usuario Creación', value: (e: Empresa) => e.usuario_creacion },
+                        { header: 'Fecha Creación', value: (e: Empresa) => new Date(e.created_at).toLocaleDateString('es-PY') },
+                        { header: 'Estado', value: (e: Empresa) => e.activo ? 'Activo' : 'Inactivo' },
+                      ], filteredEmpresas)}
+                      variant="minimal"
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      disabled={filteredEmpresas.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar Excel
+                    </Button>
 
                     <Button
                       onClick={() => setIsCreateModalOpen(true)}

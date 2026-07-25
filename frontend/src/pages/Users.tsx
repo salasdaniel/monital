@@ -19,8 +19,9 @@ import {
 } from "../components/ui/alert-dialog";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power, RefreshCw, Eye, EyeOff, Home, Building2, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
+import { Plus, Users as UsersIcon, AlertCircle, X, Edit2, Power, RefreshCw, Eye, EyeOff, Home, Building2, Coins, ChartColumnIncreasing, Car, SlidersHorizontal, Download } from "lucide-react";
 import { getUser } from "../utils/auth";
+import { exportToExcel } from "../utils/exportExcel";
 import { API_URLS, APP_KEY } from '../api/config';
 
 //combo box
@@ -688,6 +689,26 @@ const Users: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <Button
+                      onClick={() => exportToExcel('usuarios', 'Usuarios', [
+                        { header: 'Nombre Completo', value: (u: Usuario) => `${u.name} ${u.last_name}` },
+                        { header: 'Usuario', value: (u: Usuario) => u.username },
+                        { header: 'Email', value: (u: Usuario) => u.email },
+                        { header: 'RUC', value: (u: Usuario) => u.ruc },
+                        { header: 'Rol', value: (u: Usuario) => u.role === 'admin' ? 'Administrador' : 'Usuario' },
+                        { header: 'Empresa', value: (u: Usuario) => u.empresa_nombre || 'Sin empresa' },
+                        { header: 'Fecha', value: (u: Usuario) => new Date(u.created_at).toLocaleDateString('es-PY') },
+                        { header: 'Estado', value: (u: Usuario) => u.activo ? 'Activo' : 'Inactivo' },
+                      ], filteredUsuarios)}
+                      variant="minimal"
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      disabled={filteredUsuarios.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar Excel
+                    </Button>
 
                     <Button
                       onClick={() => setIsCreateModalOpen(true)}

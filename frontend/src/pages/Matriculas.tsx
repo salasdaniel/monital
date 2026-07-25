@@ -12,8 +12,9 @@ import { useToast } from "../components/ui/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown, Upload, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal } from "lucide-react";
+import { Plus, Car, AlertCircle, X, Edit2, Check, ChevronsUpDown, Upload, Home, Building2, Users, Coins, ChartColumnIncreasing, SlidersHorizontal, Download } from "lucide-react";
 import { getUser } from "../utils/auth";
+import { exportToExcel } from "../utils/exportExcel";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
 
@@ -658,6 +659,28 @@ const Matriculas: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <Button
+                      onClick={() => exportToExcel('matriculas', 'Matrículas', [
+                        { header: 'ID', value: (m: Matricula) => m.id },
+                        { header: 'Matrícula', value: (m: Matricula) => m.nro_matricula },
+                        { header: 'Tracker ID', value: (m: Matricula) => m.tracker_id },
+                        { header: 'Empresa', value: (m: Matricula) => m.empresa_nombre },
+                        { header: 'Último Kilometraje', value: (m: Matricula) => m.ultimo_kilometraje },
+                        { header: 'Última Carga', value: (m: Matricula) => m.ultima_carga },
+                        { header: 'Km Recorridos', value: (m: Matricula) => m.km_recorridos },
+                        { header: 'Promedio Consumo L/100 Km', value: (m: Matricula) => m.promedio_consumo_l_km },
+                        { header: 'Usuario Creación', value: (m: Matricula) => m.usuario_creacion },
+                        { header: 'Fecha Creación', value: (m: Matricula) => new Date(m.created_at).toLocaleDateString('es-PY') },
+                      ], filteredMatriculas)}
+                      variant="minimal"
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      disabled={filteredMatriculas.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar Excel
+                    </Button>
 
                     {user?.role === 'admin' && (
                       <>

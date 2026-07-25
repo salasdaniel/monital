@@ -10,8 +10,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Toaster } from "../components/ui/toaster";
 import Sidebar from '../components/ui/sidebar';
 import Header from '../components/ui/header';
-import { ShoppingCart, Package, DollarSign, TrendingUp, Check, ChevronsUpDown, Home, Building2, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal } from "lucide-react";
+import { ShoppingCart, Package, DollarSign, TrendingUp, Check, ChevronsUpDown, Home, Building2, Users, Coins, ChartColumnIncreasing, Car, SlidersHorizontal, Download } from "lucide-react";
 import { getUser } from "../utils/auth";
+import { exportToExcel } from "../utils/exportExcel";
 import { API_URLS, APP_KEY } from '../api/config';
 import { cn } from "../lib/utils";
 
@@ -566,6 +567,29 @@ const VentasDetalle: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <Button
+                      variant="minimal"
+                      size="sm"
+                      className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      disabled={filteredDetalles.length === 0}
+                      onClick={() => exportToExcel('ventas-detalle', 'Detalle de ventas', [
+                        { header: 'Ticket', value: (d: VentaDetalle) => d.ticket },
+                        { header: 'Fecha', value: (d: VentaDetalle) => formatDate(d.fecha) },
+                        { header: 'Cliente', value: (d: VentaDetalle) => d.nombre_cliente },
+                        { header: 'RUC Cliente', value: (d: VentaDetalle) => d.ruc_cliente },
+                        { header: 'Chofer', value: (d: VentaDetalle) => d.nombre_chofer },
+                        { header: 'Matrícula', value: (d: VentaDetalle) => d.matricula },
+                        { header: 'Estación', value: (d: VentaDetalle) => d.nombre_estacion },
+                        { header: 'Producto', value: (d: VentaDetalle) => d.nombre_producto },
+                        { header: 'Código Producto', value: (d: VentaDetalle) => d.codigo_producto },
+                        { header: 'Cantidad', value: (d: VentaDetalle) => Number(d.cantidad || 0) },
+                        { header: 'Precio Unitario', value: (d: VentaDetalle) => Number(d.precio_unitario || 0) },
+                        { header: 'Subtotal', value: (d: VentaDetalle) => Number(d.subtotal || 0) },
+                      ], filteredDetalles)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar Excel
+                    </Button>
                   </div>
                 </div>
 
